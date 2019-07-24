@@ -29,9 +29,9 @@ A simple core data wrapper with synchronous and asynchronous helper functions. I
         * [Fetch synchronous operation](#Fetch-synchronous-operation)
         * [Fetch all entities synchronous operation](#Fetch-all-entities-synchronous-operation)
         * [Delete synchronous operation](#Delete-synchronous-operation)
-        * [Delete all entities synchronous operation](#Delete-all-synchronous-operation)
+        * [Delete all entities synchronous operation](#Delete-all-entities-synchronous-operation)
         * [Update synchronous operation](#Update-synchronous-operation)
-        * [Update all entities synchronous operation](#Update-all-synchronous-operation)
+        * [Update all entities synchronous operation](#Update-all-entities-synchronous-operation)
         * [Count synchronous operation](#Count-synchronous-operation)
         * [Fetch properties synchronously](#Fetch-properties-synchronously)
         * [Math operation synchronously](#Math-operation-synchronously)
@@ -41,13 +41,15 @@ A simple core data wrapper with synchronous and asynchronous helper functions. I
         * [Fetch asynchronous operation](#Fetch-asynchronous-operation)
         * [Fetch all entities asynchronous operation](#Fetch-all-entities-asynchronous-operation)
         * [Delete asynchronous operation](#Delete-asynchronous-operation)
-        * [Delete all entities asynchronous operation](#Delete-all-asynchronous-operation)
+        * [Delete all entities asynchronous operation](#Delete-all-entities-asynchronous-operation)
         * [Update asynchronous operation](#Update-asynchronous-operation)
-        * [Update all entities asynchronous operation](#Update-all-asynchronous-operation)
+        * [Update all entities asynchronous operation](#Update-all-entities-asynchronous-operation)
         * [Count asynchronous operation](#Count-asynchronous-operation)
         * [Fetch properties asynchronously](#Fetch-properties-asynchronously)
         * [Math operation asynchronously](#Math-operation-asynchronously)
     * [Background context asynchronous operations](#Background-context-asynchronous-operations)
+    * [Save main context](#Save-main-context)
+    * [Save background context](#Save-background-context)
 * [Author](#Author)
 * [License](#License)
 
@@ -254,6 +256,20 @@ Background context asynchronous operations are **same** as main context asynchro
 let newBgContext = coreDataWrapper.newBgContext
 coreDataWrapper.addAsyncOf(type: Person.self, context: newBgContext, completion: {
 (person) in 
+})
+```
+
+## Save main context
+```ruby
+coreDataWrapper.saveMainContext(isSync: false, completion: {
+
+})
+```
+
+## Save background context
+```ruby
+coreDataWrapper.saveBGContext(context: bgContext, isSync: false, completion: {
+
 })
 ```
 

@@ -217,7 +217,9 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: {
+        coreDataWrapper.updateAllAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
+            
+            XCTAssert(updated)
             
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
@@ -328,7 +330,10 @@ class AsyncOperationsTests: XCTestCase {
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: {
+        coreDataWrapper.updateAllAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
+            
+            XCTAssert(updated)
+            
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
             
@@ -713,8 +718,10 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: {
-            
+        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
+        
+            XCTAssert(updated)
+        
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
             
@@ -746,8 +753,10 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: {
-            
+        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
+        
+            XCTAssert(updated)
+        
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
             
@@ -949,7 +958,9 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: {
+        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
+            
+            XCTAssert(updated)
             
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)

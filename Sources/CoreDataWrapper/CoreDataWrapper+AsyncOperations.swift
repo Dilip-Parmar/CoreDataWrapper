@@ -566,18 +566,18 @@ extension CoreDataWrapper {
          properties: [AnyHashable: Any],
          predicate: NSPredicate? = nil,
          shouldSave: Bool,
-         completion: @escaping () -> Void,
+         completion: @escaping (Bool) -> Void,
          completionOnMainThread: Bool) {
         
         let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
         
         //Local function
-        func sqliteBlock() {
+        func sqliteBlock() -> Bool {
+            var sqliteResult = false
             guard let entityDesc =
                 NSEntityDescription.entity(forEntityName: String(describing: type),
                                            in: innerContext) else {
-                                            completion()
-                                            return
+                                            return false
             }
             //Batch updates are only available when you are using a SQLite persistent store.
             let batchUpdateRequest = NSBatchUpdateRequest(entity: entityDesc)
@@ -593,13 +593,16 @@ extension CoreDataWrapper {
                     let changes = [NSUpdatedObjectsKey: ids] as [AnyHashable: Any]
                     NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes,
                                                         into: [innerContext, self.mainContext])
+                    sqliteResult = true
                 }
             } catch let error {
                 debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
             }
+            return sqliteResult
         }
         //Local function
-        func nonSqliteBlock () {
+        func nonSqliteBlock() -> Bool {
+            var nonSqliteResult = false
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>.init(entityName: String(describing: type))
             fetchRequest.returnsObjectsAsFaults = false
             fetchRequest.predicate = predicate
@@ -612,45 +615,51 @@ extension CoreDataWrapper {
                             //}
                         }
                     }
+                    nonSqliteResult = true
                 }
             } catch let error {
                 debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
             }
+            return nonSqliteResult
         }
-        let updateAllBlock = {
+        let updateAllBlock = { () -> Bool in
+            var updateResult = false
             if self.storeType == .sqlite && shouldSave {
-                sqliteBlock()
+                updateResult = sqliteBlock()
             } else {
-                nonSqliteBlock()
+                updateResult = nonSqliteBlock()
             }
+            return updateResult
         }
         innerContext.perform {
-            updateAllBlock()
-            let saveMain = { (completion: @escaping () -> Void) in
+            
+            let isUpdated = updateAllBlock()
+            
+            let saveMain = { (completion: @escaping (Bool) -> Void) in
                 if self.storeType != .sqlite {
-                    self.saveMainContext(isSync: false, completion: { (Bool) in
-                        completion()
+                    self.saveMainContext(isSync: false, completion: { (isSuccess) in
+                        completion(isSuccess && isUpdated)
                     })
                 } else {
-                    completion()
+                    completion(isUpdated)
                 }
             }
-            let saveBG = { (completion: @escaping () -> Void) in
+            let saveBG = { (completion: @escaping (Bool) -> Void) in
                 if self.storeType != .sqlite {
-                    self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
-                        completion()
+                    self.saveBGContext(context: innerContext, isSync: true, completion: { (isSuccess) in
+                        completion(isSuccess && isUpdated)
                     })
                 } else {
-                    completion()
+                    completion(isUpdated)
                 }
             }
-            let mainCaller = {
+            let mainCaller = { (updateResult: Bool) in
                 self.mainContext.perform {
-                    completion()
+                    completion(updateResult)
                 }
             }
-            let bgCaller = {
-                completion()
+            let bgCaller = { (updateResult: Bool) in
+                completion(updateResult)
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
@@ -662,31 +671,31 @@ extension CoreDataWrapper {
                 
             //It's main context and main thread callback
             case (true, false, false):
-                bgCaller()
+                bgCaller(isUpdated)
                 
             //It's main context and no main thread callback
             case (false, false, true): debugPrint("\(tuple)"); fallthrough
                 
             //It's main context and main thread callback
             case (true, false, true):
-                saveMain({
-                    bgCaller()
+                saveMain({ (updateResult) in
+                    bgCaller(updateResult)
                 })
                 
             //It's bg context and no main thread callback
             case (false, true, true):
-                saveBG({
-                    bgCaller()
+                saveBG({ (updateResult) in
+                    bgCaller(updateResult)
                 })
                 
             //It's bg context and main thread callback
             case (true, true, false):
-                mainCaller()
+                mainCaller(isUpdated)
                 
             //It's bg context and main thread callback
             case (true, true, true):
-                saveBG({
-                    mainCaller()
+                saveBG({ (updateResult) in
+                    mainCaller(updateResult)
                 })
             }
         }

@@ -19,7 +19,16 @@
 //LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
-#import <UIKit/UIKit.h>
+import Foundation
+import CoreData
 
-FOUNDATION_EXPORT double CoreDataWrapperVersionNumber;
-FOUNDATION_EXPORT const unsigned char CoreDataWrapperVersionString[];
+extension Car {
+
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<Car> {
+        return NSFetchRequest<Car>(entityName: "Car")
+    }
+
+    @NSManaged public var regNo: Int64
+    @NSManaged public var id: Int64
+    @NSManaged public var model: String?
+}

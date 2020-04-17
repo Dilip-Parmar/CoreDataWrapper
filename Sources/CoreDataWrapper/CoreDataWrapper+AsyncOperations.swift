@@ -2,11 +2,11 @@
 //
 //Copyright (c) 2019 Dilip-Parmar
 //
-//Permission is hereby granted, free of charge, to any person obtaining a copy
+//Permission is hereby granted, free of charge, to any Car obtaining a copy
 //of this software and associated documentation files (the "Software"), to deal
 //in the Software without restriction, including without limitation the rights
 //to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//copies of the Software, and to permit persons to whom the Software is
+//copies of the Software, and to permit Cars to whom the Software is
 //furnished to do so, subject to the following conditions:
 //
 //The above copyright notice and this permission notice shall be included in all
@@ -306,7 +306,7 @@ extension CoreDataWrapper {
     final public func deleteAsyncBy(objectId: NSManagedObjectID,
                                     context: NSManagedObjectContext? = nil,
                                     shouldSave: Bool,
-                                    completion: @escaping (Bool) -> Void,
+                                    completion: @escaping () -> Void,
                                     completionOnMainThread: Bool) {
         var innerContext: NSManagedObjectContext
         if let context = context {
@@ -319,31 +319,31 @@ extension CoreDataWrapper {
                 !existingObject.isDeleted {
                 innerContext.delete(existingObject)
             }
-            let saveMain = { (completion: @escaping (Bool) -> Void) in
-                self.saveMainContext(isSync: false, completion: { (isSuccess) in
-                    completion(isSuccess)
+            let saveMain = { (completion: @escaping () -> Void) in
+                self.saveMainContext(isSync: false, completion: { (Bool) in
+                    completion()
                 })
             }
-            let saveBG = { (completion: @escaping (Bool) -> Void) in
-                self.saveBGContext(context: innerContext, isSync: true, completion: { (isSuccess) in
-                    completion(isSuccess)
+            let saveBG = { (completion: @escaping () -> Void) in
+                self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
+                    completion()
                 })
             }
-            let mainCaller = { (isSuccess: Bool) in
+            let mainCaller = {
                 self.mainContext.perform {
-                    completion(isSuccess)
+                    completion()
                 }
             }
-            let bgCaller = { (isSuccess: Bool) in
-                completion(isSuccess)
+            let bgCaller = {
+                completion()
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
             case (false, false, false): //It's main context and no main thread callback
-                bgCaller(<#Bool#>)
+                bgCaller()
             case (false, false, true): //It's main context and no main thread callback
-                saveMain({ (isSuccess: Bool) in
-                    bgCaller(isSuccess)
+                saveMain({
+                    bgCaller()
                 })
             case (false, true, false): //It's bg context and no main thread callback
                 bgCaller()

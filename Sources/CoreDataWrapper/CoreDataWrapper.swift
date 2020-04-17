@@ -2,11 +2,11 @@
 //
 //Copyright (c) 2019 Dilip-Parmar
 //
-//Permission is hereby granted, free of charge, to any person obtaining a copy
+//Permission is hereby granted, free of charge, to any Car obtaining a copy
 //of this software and associated documentation files (the "Software"), to deal
 //in the Software without restriction, including without limitation the rights
 //to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//copies of the Software, and to permit persons to whom the Software is
+//copies of the Software, and to permit Cars to whom the Software is
 //furnished to do so, subject to the following conditions:
 //
 //The above copyright notice and this permission notice shall be included in all
@@ -31,12 +31,20 @@ final public class CoreDataWrapper {
     public private (set) var storeURL: URL?
     public private (set) var storeType: StoreType
     public private (set) var mergePolicy: NSMergePolicy
+    public private (set) var databaseFileName: String = ""
+    public private (set) var error: NSError?
     
     // MARK: Initializers
     @available(iOS 12.0, macOS 10.13, *)
-    public init(modelFileName: String, bundle: Bundle, storeType: StoreType, storeURL: URL? = nil, mergePolicy: NSMergePolicy = .mergeByPropertyObjectTrump) {
+    public init(modelFileName: String,
+                databaseFileName: String,
+                bundle: Bundle,
+                storeType: StoreType,
+                storeURL: URL? = nil,
+                mergePolicy: NSMergePolicy = .mergeByPropertyObjectTrump) {
         
         self.modelFileName = modelFileName
+        self.databaseFileName = databaseFileName
         self.bundle = bundle
         self.storeType = storeType
         self.storeURL = storeURL
@@ -53,9 +61,10 @@ final public class CoreDataWrapper {
         let container = NSPersistentContainer(name: self.modelFileName, managedObjectModel: self.model)
         container.persistentStoreDescriptions = [self.storeDescription]
         
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+        container.loadPersistentStores(completionHandler: { [weak self] (storeDescription, error) in
             if let error = error as NSError? {
                 debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
+                self?.error = error
             }
             debugPrint(storeDescription.url!)
             debugPrint(storeDescription.type)
@@ -81,7 +90,7 @@ final public class CoreDataWrapper {
     
     // MARK: New Background context
     @available(iOS 12.0, macOS 10.13, *)
-    final public var newBgContext: NSManagedObjectContext {
+    final public func newBgContext() -> NSManagedObjectContext {
         let newContext = self.persistentContainer.newBackgroundContext()
         self.setConfigTo(context: newContext)
         return newContext
@@ -128,7 +137,7 @@ final public class CoreDataWrapper {
     private lazy var storeDescription: NSPersistentStoreDescription = {
         let storeDescription = NSPersistentStoreDescription.init()
         switch self.storeType {
-        case .sqlite: fallthrough
+        case .sqlite: debugPrint("\(self.storeType)"); fallthrough
         case .binary:
             if let storeURL = self.storeURL {
                 storeDescription.url = storeURL
@@ -136,7 +145,6 @@ final public class CoreDataWrapper {
                 storeDescription.url = self.storeFullURL
                 self.storeURL = self.storeFullURL
             }
-            break
         case .inMemory:
             break
         }
@@ -150,27 +158,29 @@ final public class CoreDataWrapper {
     // MARK: Store URL
     private lazy var storeFullURL: URL? = {
         let searchPathDirectory = FileManager.SearchPathDirectory.documentDirectory
-        let modelFileNameWidExt = self.modelFileName + self.storeType.getStoreFileExt()
+        let databaseFileNameWidExt = self.databaseFileName + self.storeType.getStoreFileExt()
         let url = try? FileManager.default.url(for: searchPathDirectory,
                                                in: .userDomainMask,
                                                appropriateFor: nil,
                                                create: true)
-        return url?.appendingPathComponent(modelFileNameWidExt)
+        return url?.appendingPathComponent(databaseFileNameWidExt)
     }()
     
     // MARK: Save Context
     @available(iOS 12.0, macOS 10.13, *)
     final public func saveMainContext(isSync: Bool,
-                                      completion: (() -> Void)?) -> Void {
+                                      completion: ((Bool) -> Void)?) {
         let saveChangesBlock = {
             if self.mainContext.hasChanges {
                 do {
                     try self.mainContext.save()
                 } catch let error {
                     debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
+                    completion?(false)
+                    return
                 }
             }
-            completion?()
+            completion?(true)
         }
         isSync ? (self.mainContext.performAndWait {
             saveChangesBlock()
@@ -182,16 +192,18 @@ final public class CoreDataWrapper {
     @available(iOS 12.0, macOS 10.13, *)
     final public func saveBGContext(context: NSManagedObjectContext,
                                     isSync: Bool,
-                                    completion: (() -> Void)?) {
+                                    completion: ((Bool) -> Void)?) {
         let saveChangesBlock = {
-            if (context.hasChanges) {
+            if context.hasChanges {
                 do {
                     try context.save()
                 } catch let error {
                     debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
+                    completion?(false)
+                    return
                 }
             }
-            completion?()
+            completion?(true)
         }
         isSync ? (context.performAndWait {
             saveChangesBlock()
@@ -265,7 +277,7 @@ public enum StoreType: String {
             return NSInMemoryStoreType
         }
     }
-
+    
     @available(iOS 12.0, macOS 10.13, *)
     internal func getStoreFileExt() -> String {
         switch self {
@@ -276,4 +288,3 @@ public enum StoreType: String {
         }
     }
 }
-

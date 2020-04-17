@@ -79,9 +79,10 @@ extension CoreDataWrapper {
         return existingObject
     }
     // MARK: - Fetch all entities
-    final public func fetchAllOf<M: NSManagedObject>(type: M.Type,
-                                                     predicate: NSPredicate? = nil,
-                                                     sortBy: [String: Bool]? = nil) -> [M]? {
+    final public func fetchAllOf<M: NSManagedObject>
+        (type: M.Type,
+         predicate: NSPredicate? = nil,
+         sortBy: [String: Bool]? = nil) -> [M]? {
         var fetched: [M]?
         self.mainContext.performAndWait {
             let sortByBlock = { () -> [NSSortDescriptor] in
@@ -153,9 +154,10 @@ extension CoreDataWrapper {
         return result
     }
     // MARK: - Delete all
-    final public func deleteAllOf<M: NSManagedObject>(type: M.Type,
-                                                      predicate: NSPredicate? = nil,
-                                                      shouldSave: Bool) -> Bool {
+    final public func deleteAllOf<M: NSManagedObject>
+        (type: M.Type,
+         predicate: NSPredicate? = nil,
+         shouldSave: Bool) -> Bool {
         var result = false
         let sqliteDeleteAll = { () -> Bool in
             var sqliteResult = false
@@ -206,9 +208,10 @@ extension CoreDataWrapper {
         return result
     }
     // MARK: - Update
-    final public func updateBy(objectId: NSManagedObjectID,
-                               properties: [String: Any],
-                               shouldSave: Bool) -> Bool {
+    final public func updateBy
+        (objectId: NSManagedObjectID,
+         properties: [String: Any],
+         shouldSave: Bool) -> Bool {
         var result = false
         if let fetched = self.fetchBy(objectId: objectId) {
             self.mainContext.performAndWait {
@@ -290,8 +293,9 @@ extension CoreDataWrapper {
         return result
     }
     // MARK: - Count
-    final public func countOf<M: NSManagedObject>(type: M.Type,
-                                                  predicate: NSPredicate? = nil) -> Int {
+    final public func countOf<M: NSManagedObject>
+        (type: M.Type,
+         predicate: NSPredicate? = nil) -> Int {
         var count = 0
         
         self.mainContext.performAndWait {

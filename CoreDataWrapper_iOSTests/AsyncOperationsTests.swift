@@ -188,7 +188,10 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: {
+        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
+            
+            XCTAssert(isUpdated)
+            
             XCTAssertEqual(car?.model, "dp1")
             XCTAssertEqual(car?.regNo, 40)
             
@@ -731,7 +734,9 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: {
+        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
+        
+            XCTAssert(isUpdated)
             
             let car = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssertEqual(car!.model, "dp1")
@@ -756,11 +761,37 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: {
+        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
+        
+            XCTAssert(isUpdated)
             
             let car = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssertEqual(car?.model, "dp1")
             XCTAssertEqual(car?.regNo, 40)
+            XCTAssert(Thread.isMainThread)
+            expectation.fulfill()
+            
+        }, completionOnMainThread: true)
+        
+        wait(for: [expectation], timeout: 1.0)
+    }
+    
+    func testUpdateObjAsyncWidBGContextMainThreadSave() {
+        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                   databaseFileName: "CoreDataWrapper",
+                                                   bundle: Bundle(for: AsyncOperationsTests.self),
+                                                   storeType: .inMemory)
+        XCTAssertNotNil(coreDataWrapper)
+        
+        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        XCTAssertNotNil(car)
+        
+        let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        let context = coreDataWrapper.newBgContext()
+        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: false, completion: { (isUpdated) in
+        
+            XCTAssert(isUpdated)
+            
             XCTAssert(Thread.isMainThread)
             expectation.fulfill()
             

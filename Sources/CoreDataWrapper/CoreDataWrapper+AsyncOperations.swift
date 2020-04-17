@@ -25,9 +25,10 @@ import CoreData
 extension CoreDataWrapper {
     
     // MARK: - Add
-    final public func addAsyncOf<M: NSManagedObject>(type: M.Type,
-                                                     context: NSManagedObjectContext? = nil,
-                                                     completion: @escaping (M?) -> Void) {
+    final public func addAsyncOf<M: NSManagedObject>
+        (type: M.Type,
+         context: NSManagedObjectContext? = nil,
+         completion: @escaping (M?) -> Void) {
         var innerContext: NSManagedObjectContext
         if let context = context {
             innerContext = context
@@ -303,11 +304,12 @@ extension CoreDataWrapper {
         }
     }
     // MARK: - Delete
-    final public func deleteAsyncBy(objectId: NSManagedObjectID,
-                                    context: NSManagedObjectContext? = nil,
-                                    shouldSave: Bool,
-                                    completion: @escaping () -> Void,
-                                    completionOnMainThread: Bool) {
+    final public func deleteAsyncBy
+        (objectId: NSManagedObjectID,
+         context: NSManagedObjectContext? = nil,
+         shouldSave: Bool,
+         completion: @escaping () -> Void,
+         completionOnMainThread: Bool) {
         var innerContext: NSManagedObjectContext
         if let context = context {
             innerContext = context
@@ -493,36 +495,39 @@ extension CoreDataWrapper {
         }
     }
     // MARK: - Update
-    final public func updateAsyncBy(objectId: NSManagedObjectID,
-                                    context: NSManagedObjectContext? = nil,
-                                    properties: [String: Any],
-                                    shouldSave: Bool,
-                                    completion: @escaping () -> Void,
-                                    completionOnMainThread: Bool) {
+    final public func updateAsyncBy
+        (objectId: NSManagedObjectID,
+         context: NSManagedObjectContext? = nil,
+         properties: [String: Any],
+         shouldSave: Bool,
+         completion: @escaping (Bool) -> Void,
+         completionOnMainThread: Bool) {
         let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
         innerContext.perform {
+            var isUpdated = false
             if let fetched = try? innerContext.existingObject(with: objectId) {
                 for (key, value) in properties {
                     fetched.setValue(value, forKey: key)
                 }
+                isUpdated = true
             }
-            let saveMain = { (completion: @escaping () -> Void) in
-                self.saveMainContext(isSync: false, completion: { (Bool) in
-                    completion()
+            let saveMain = { (completion: @escaping (Bool) -> Void) in
+                self.saveMainContext(isSync: false, completion: { (isSuccess) in
+                    completion(isSuccess)
                 })
             }
-            let saveBG = { (completion: @escaping () -> Void) in
-                self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
-                    completion()
+            let saveBG = { (completion: @escaping (Bool) -> Void) in
+                self.saveBGContext(context: innerContext, isSync: true, completion: { (isSuccess) in
+                    completion(isSuccess)
                 })
             }
-            let mainCaller = {
+            let mainCaller = { (updateResult: Bool) in
                 self.mainContext.perform {
-                    completion()
+                    completion(updateResult)
                 }
             }
-            let bgCaller = {
-                completion()
+            let bgCaller = { (updateResult: Bool) in
+                completion(updateResult)
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
@@ -534,27 +539,27 @@ extension CoreDataWrapper {
                 
             //It's bg context and no main thread callback
             case (false, true, false):
-                bgCaller()
+                bgCaller(isUpdated)
             //It's main context and no main thread callback
             case (false, false, true): debugPrint("\(tuple)"); fallthrough
             //It's main context and main thread callback
             case (true, false, true):
-                saveMain({
-                    bgCaller()
+                saveMain({ (isSuccess: Bool) in
+                    bgCaller(isSuccess)
                 })
             //It's bg context and no main thread callback
             case (false, true, true):
-                saveBG({
-                    bgCaller()
+                saveBG({ (isSuccess: Bool) in
+                    bgCaller(isSuccess)
                 })
                 
             //It's bg context and main thread callback
             case (true, true, false):
-                mainCaller()
+                mainCaller(isUpdated)
             //It's bg context and main thread callback
             case (true, true, true):
-                saveBG({
-                    mainCaller()
+                saveBG({ (isSuccess: Bool) in
+                    mainCaller(isSuccess)
                 })
             }
         }

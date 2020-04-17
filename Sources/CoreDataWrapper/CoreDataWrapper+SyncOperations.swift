@@ -28,8 +28,6 @@ public enum MathOperation: String {
     case min
     case max
     case average
-    case lowercase
-    case uppercase
 }
 
 @available(iOS 12.0, macOS 10.13, *)
@@ -40,8 +38,9 @@ extension CoreDataWrapper {
         
         var entity: M?
         self.mainContext.performAndWait {
-            guard let entityDesc = NSEntityDescription.entity(forEntityName: String(describing: type), in: self.mainContext) else {
-                return
+            guard let entityDesc = NSEntityDescription.entity(forEntityName: String(describing: type),
+                                                              in: self.mainContext) else {
+                                                                return
             }
             entity = NSManagedObject.init(entity: entityDesc, insertInto: self.mainContext) as? M
             try? self.mainContext.obtainPermanentIDs(for: Array(self.mainContext.insertedObjects))
@@ -55,15 +54,16 @@ extension CoreDataWrapper {
         var entity: M?
         
         self.mainContext.performAndWait {
-            guard let entityDesc = NSEntityDescription.entity(forEntityName: String(describing: type), in: self.mainContext) else {
-                return
+            guard let entityDesc = NSEntityDescription.entity(forEntityName: String(describing: type),
+                                                              in: self.mainContext) else {
+                                                                return
             }
             entity = NSManagedObject.init(entity: entityDesc, insertInto: self.mainContext) as? M
             try? self.mainContext.obtainPermanentIDs(for: Array(self.mainContext.insertedObjects))
             for (key, value) in properties {
                 entity?.setValue(value, forKey: key)
             }
-            if (shouldSave) {
+            if shouldSave {
                 self.saveMainContext(isSync: true, completion: nil)
             }
         }
@@ -81,7 +81,7 @@ extension CoreDataWrapper {
     // MARK: - Fetch all entities
     final public func fetchAllOf<M: NSManagedObject>(type: M.Type,
                                                      predicate: NSPredicate? = nil,
-                                                     sortBy:[String: Bool]? = nil) -> [M]? {
+                                                     sortBy: [String: Bool]? = nil) -> [M]? {
         var fetched: [M]?
         self.mainContext.performAndWait {
             let sortByBlock = { () -> [NSSortDescriptor] in
@@ -107,7 +107,7 @@ extension CoreDataWrapper {
         (type: M.Type,
          propertiesToFetch: [String],
          predicate: NSPredicate? = nil,
-         sortBy:[String: Bool]? = nil,
+         sortBy: [String: Bool]? = nil,
          needDistinctResults: Bool = false) -> [[String: AnyObject]]? {
         
         var properties: [[String: AnyObject]]?
@@ -136,17 +136,21 @@ extension CoreDataWrapper {
     }
     // MARK: - Delete
     final public func deleteBy(objectId: NSManagedObjectID,
-                                         shouldSave: Bool) {
+                               shouldSave: Bool) -> Bool {
         guard let managedObject = self.fetchBy(objectId: objectId),
             !managedObject.isDeleted else {
-                return
+                return false
         }
+        var result = false
         self.mainContext.performAndWait {
             self.mainContext.delete(managedObject)
-            if (shouldSave) {
-                self.saveMainContext(isSync: true, completion: nil)
+            if shouldSave {
+                self.saveMainContext(isSync: true, completion: { (isSuccess) in
+                    result = isSuccess
+                })
             }
         }
+        return result
     }
     // MARK: - Delete all
     final public func deleteAllOf<M: NSManagedObject>(type: M.Type,
@@ -162,7 +166,8 @@ extension CoreDataWrapper {
                 let ids = batchResult?.result as? [NSManagedObjectID]
                 if let ids = ids, ids.count > 0 {
                     let deletedObjects = [NSDeletedObjectsKey: ids]
-                    NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects as [AnyHashable: Any], into: [self.mainContext])
+                    NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects as [AnyHashable: Any],
+                                                        into: [self.mainContext])
                 }
             } catch let error {
                 debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
@@ -173,17 +178,17 @@ extension CoreDataWrapper {
                 return
             }
             self.mainContext.performAndWait {
-                for object in fetched {
-                    if (!object.isDeleted) {
-                        self.mainContext.delete(object)
-                    }
+                for object in fetched where object.isDeleted == false {
+                    //if !object.isDeleted {
+                    self.mainContext.delete(object)
+                    //}
                 }
-                if (shouldSave) {
+                if shouldSave {
                     self.saveMainContext(isSync: true, completion: nil)
                 }
             }
         }
-        if (self.storeType == .sqlite && shouldSave) {
+        if self.storeType == .sqlite && shouldSave {
             sqliteDeleteAll()
         } else {
             nonSqliteDeleteAll()
@@ -199,24 +204,26 @@ extension CoreDataWrapper {
             for (key, value) in properties {
                 fetched?.setValue(value, forKey: key)
             }
-            if (shouldSave) {
-               self.saveMainContext(isSync: true, completion: nil)
+            if shouldSave {
+                self.saveMainContext(isSync: true, completion: nil)
             }
         }
     }
     // MARK: - Update all
     final public func updateAllOf<M: NSManagedObject>
         (type: M.Type,
-         properties:[AnyHashable: Any],
+         properties: [AnyHashable: Any],
          predicate: NSPredicate? = nil,
-         shouldSave: Bool) {
+         shouldSave: Bool) -> Bool {
         
-        let sqliteUpdateAll = {
-            guard let entityDesc = NSEntityDescription.entity(forEntityName: String(describing: type), in: self.mainContext) else {
-                return
+        var result = false
+        let sqliteUpdateAll = { () -> Bool in
+            var result = false
+            guard let entityDesc = NSEntityDescription.entity(forEntityName: String(describing: type),
+                                                              in: self.mainContext) else {
+                                                                return false
             }
             let batchUpdateRequest = NSBatchUpdateRequest(entity: entityDesc)
-            
             batchUpdateRequest.resultType = .updatedObjectIDsResultType
             batchUpdateRequest.propertiesToUpdate = properties as [AnyHashable: Any]
             batchUpdateRequest.predicate = predicate
@@ -227,35 +234,41 @@ extension CoreDataWrapper {
                 if let ids = ids, ids.count > 0 {
                     let updatedObjects = [NSUpdatedObjectsKey: ids] as [AnyHashable: Any]
                     NSManagedObjectContext.mergeChanges(fromRemoteContextSave: updatedObjects, into: [self.mainContext])
+                    result = true
                 }
             } catch let error {
                 debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
+                result = false
             }
+            return result
         }
-        let nonSqliteUpdateAll = {
+        let nonSqliteUpdateAll = { () -> Bool in
+            
             guard let fetched = self.fetchAllOf(type: type, predicate: predicate, sortBy: nil) else {
-                return
+                return false
             }
             self.mainContext.performAndWait {
                 for object in fetched {
                     for (key, value) in properties {
-                        if key is String {
-                            object.setValue(value, forKey: key as! String)
-                        }
+                        //if key is String {
+                        object.setValue(value, forKey: "\(key)")
+                        //}
                     }
                 }
-                if (shouldSave) {
+                if shouldSave {
                     self.saveMainContext(isSync: true, completion: nil)
                 }
             }
+            return true
         }
-        if (self.storeType == .sqlite && shouldSave) {
+        if self.storeType == .sqlite && shouldSave {
             self.mainContext.performAndWait {
-                sqliteUpdateAll()
+                result = sqliteUpdateAll()
             }
         } else {
-            nonSqliteUpdateAll()
+            result = nonSqliteUpdateAll()
         }
+        return result
     }
     // MARK: - Count
     final public func countOf<M: NSManagedObject>(type: M.Type,
@@ -278,7 +291,7 @@ extension CoreDataWrapper {
         
         var properties: [[String: AnyObject]]?
         
-        if (self.storeType == .sqlite) {
+        if self.storeType == .sqlite {
             self.mainContext.performAndWait {
                 
                 let keypathExp = NSExpression(forKeyPath: propertyName) // can be any column
@@ -291,18 +304,14 @@ extension CoreDataWrapper {
                 
                 var expressionResultType: NSAttributeType
                 switch operation {
-                case .count: fallthrough
-                case .min:   fallthrough
-                case .max:   fallthrough
+                case .count: debugPrint("\(operation)"); fallthrough
+                case .min:   debugPrint("\(operation)"); fallthrough
+                case .max:   debugPrint("\(operation)"); fallthrough
                 case .sum:
                     expressionResultType = .integer64AttributeType
                     
                 case .average:
                     expressionResultType = .doubleAttributeType
-                    
-                case .lowercase: fallthrough
-                case .uppercase:
-                    expressionResultType = .stringAttributeType
                 }
                 expressionDesc.expressionResultType = expressionResultType
                 

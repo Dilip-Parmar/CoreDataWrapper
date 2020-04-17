@@ -20,7 +20,7 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 import CoreData
-
+// swiftlint:disable file_length
 @available(iOS 12.0, macOS 10.13, *)
 extension CoreDataWrapper {
     
@@ -49,6 +49,7 @@ extension CoreDataWrapper {
         }
     }
     // MARK: - Add with properties
+    // swiftlint:disable function_body_length
     final public func addAsyncOf<M: NSManagedObject>
         (type: M.Type,
          context: NSManagedObjectContext? = nil,
@@ -75,10 +76,14 @@ extension CoreDataWrapper {
                 entity?.setValue(value, forKey: key)
             }
             let saveMain = { (completion: @escaping () -> Void) in
-                self.saveMainContext(isSync: false, completion: completion)
+                self.saveMainContext(isSync: false, completion: { (Bool) in
+                    completion()
+                })
             }
             let saveBG = { (completion: @escaping () -> Void) in
-                self.saveBGContext(context: innerContext, isSync: true, completion: completion)
+                self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
+                    completion()
+                })
             }
             let mainCaller = {
                 self.mainContext.perform {
@@ -94,29 +99,36 @@ extension CoreDataWrapper {
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
-            case (false, false, false): //It's main context and no main thread callback
+            //It's main context and no main thread callback
+            case (false, false, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's bg context and no main thread callback
+            case (false, true, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's main context and main thread callback
+            case (true, false, false):
                 bgCaller()
-            case (false, false, true): //It's main context and no main thread callback
+                
+            //It's main context and no main thread callback
+            case (false, false, true): debugPrint("\(tuple)"); fallthrough
+                
+            //It's main context and main thread callback
+            case (true, false, true):
                 saveMain({
                     bgCaller()
                 })
-            case (false, true, false): //It's bg context and no main thread callback
-                bgCaller()
-            case (false, true, true): //It's bg context and no main thread callback
+                
+            //It's bg context and no main thread callback
+            case (false, true, true):
                 saveBG({
                     bgCaller()
                 })
-            case (true, false, false): //It's main context and main thread callback
-                bgCaller()
-            case (true, false, true): //It's main context and main thread callback
-                saveMain({
-                    bgCaller()
-                })
-            case (true, true, false): //It's bg context and main thread callback
-                saveBG({
-                    mainCaller()
-                })
-            case (true, true, true): //It's bg context and main thread callback
+                
+            //It's bg context and main thread callback
+            case (true, true, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's bg context and main thread callback
+            case (true, true, true):
                 saveBG({
                     mainCaller()
                 })
@@ -126,11 +138,14 @@ extension CoreDataWrapper {
             addBlock()
         }
     }
+    
     // MARK: - Fetch
-    final public func fetchAsyncBy(objectId: NSManagedObjectID,
-                                   context: NSManagedObjectContext? = nil,
-                                   completion: @escaping (NSManagedObject?) -> Void,
-                                   completionOnMainThread: Bool) {
+    final public func fetchAsyncBy<M: NSManagedObject>
+        (type: M.Type,
+         objectId: NSManagedObjectID,
+         context: NSManagedObjectContext? = nil,
+         completion: @escaping (M?) -> Void,
+         completionOnMainThread: Bool) {
         var innerContext: NSManagedObjectContext
         if let context = context {
             innerContext = context
@@ -138,11 +153,11 @@ extension CoreDataWrapper {
             innerContext = self.mainContext
         }
         innerContext.perform {
-            let fetched = try? innerContext.existingObject(with: objectId)
+            let fetched = try? innerContext.existingObject(with: objectId) as? M
             
             let mainCaller = {
                 self.mainContext.perform {
-                    if let fetched = fetched, let existing = self.fetchBy(objectId: fetched.objectID) {
+                    if let fetched = fetched, let existing = self.fetchBy(objectId: fetched.objectID) as? M {
                         completion(existing)
                     } else {
                         completion(nil)
@@ -170,7 +185,7 @@ extension CoreDataWrapper {
         (type: M.Type,
          context: NSManagedObjectContext? = nil,
          predicate: NSPredicate? = nil,
-         sortBy:[String: Bool]?,
+         sortBy: [String: Bool]?,
          completion: @escaping ([M]?) -> Void,
          completionOnMainThread: Bool) {
         
@@ -234,7 +249,7 @@ extension CoreDataWrapper {
          context: NSManagedObjectContext? = nil,
          propertiesToFetch: [String],
          predicate: NSPredicate? = nil,
-         sortBy:[String: Bool]? = nil,
+         sortBy: [String: Bool]? = nil,
          needDistinctResults: Bool = false,
          completion: @escaping ([[String: AnyObject]]?) -> Void,
          completionOnMainThread: Bool) {
@@ -291,7 +306,7 @@ extension CoreDataWrapper {
     final public func deleteAsyncBy(objectId: NSManagedObjectID,
                                     context: NSManagedObjectContext? = nil,
                                     shouldSave: Bool,
-                                    completion: @escaping () -> Void,
+                                    completion: @escaping (Bool) -> Void,
                                     completionOnMainThread: Bool) {
         var innerContext: NSManagedObjectContext
         if let context = context {
@@ -304,27 +319,31 @@ extension CoreDataWrapper {
                 !existingObject.isDeleted {
                 innerContext.delete(existingObject)
             }
-            let saveMain = { (completion: @escaping () -> Void) in
-                self.saveMainContext(isSync: false, completion: completion)
+            let saveMain = { (completion: @escaping (Bool) -> Void) in
+                self.saveMainContext(isSync: false, completion: { (isSuccess) in
+                    completion(isSuccess)
+                })
             }
-            let saveBG = { (completion: @escaping () -> Void) in
-                self.saveBGContext(context: innerContext, isSync: true, completion: completion)
+            let saveBG = { (completion: @escaping (Bool) -> Void) in
+                self.saveBGContext(context: innerContext, isSync: true, completion: { (isSuccess) in
+                    completion(isSuccess)
+                })
             }
-            let mainCaller = {
+            let mainCaller = { (isSuccess: Bool) in
                 self.mainContext.perform {
-                    completion()
+                    completion(isSuccess)
                 }
             }
-            let bgCaller = {
-                completion()
+            let bgCaller = { (isSuccess: Bool) in
+                completion(isSuccess)
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
             case (false, false, false): //It's main context and no main thread callback
-                bgCaller()
+                bgCaller(<#Bool#>)
             case (false, false, true): //It's main context and no main thread callback
-                saveMain({
-                    bgCaller()
+                saveMain({ (isSuccess: Bool) in
+                    bgCaller(isSuccess)
                 })
             case (false, true, false): //It's bg context and no main thread callback
                 bgCaller()
@@ -356,18 +375,12 @@ extension CoreDataWrapper {
          completion: @escaping () -> Void,
          completionOnMainThread: Bool) {
         
-        var innerContext: NSManagedObjectContext
-        if let context = context {
-            innerContext = context
-        } else {
-            innerContext = self.mainContext
-        }
+        let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
         let deleteAllObjectBlock = {
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>.init(entityName: String(describing: type))
             fetchRequest.predicate = predicate
-            
-            //Important: Batch delete are only available when you are using a SQLite persistent store.
-            if (self.storeType == .sqlite && shouldSave) {
+            //Local function
+            func sqliteBlock() {
                 let deleteBatchRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
                 deleteBatchRequest.resultType = .resultTypeObjectIDs
                 do {
@@ -376,38 +389,48 @@ extension CoreDataWrapper {
                         ids.count > 0 {
                         let changedObjects = [NSDeletedObjectsKey: ids]
                         NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changedObjects as [AnyHashable: Any],
-                                                            into: [innerContext])
+                                                            into: [innerContext, self.mainContext])
                     }
                 } catch let error {
                     debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
                 }
-            } else {
+            }
+            //Local function
+            func nonSqliteBlock() {
                 fetchRequest.returnsObjectsAsFaults = false
                 do {
                     let fetchedObjects = try? innerContext.fetch(fetchRequest) as? [M]
                     if let fetchedObjects = fetchedObjects {
-                        for object in fetchedObjects {
-                            if (!object.isDeleted) {
-                                innerContext.delete(object)
-                            }
+                        for object in fetchedObjects where object.isDeleted == false {
+                            innerContext.delete(object)
                         }
                     }
                 }
+            }
+            //Important: Batch delete are only available when you are using a SQLite persistent store.
+            if self.storeType == .sqlite && shouldSave {
+                sqliteBlock()
+            } else {
+                nonSqliteBlock()
             }
         }
         innerContext.perform {
             deleteAllObjectBlock()
             
             let saveMain = { (completion: @escaping () -> Void) in
-                if (self.storeType != .sqlite) {
-                    self.saveMainContext(isSync: false, completion: completion)
+                if self.storeType != .sqlite {
+                    self.saveMainContext(isSync: false, completion: { (Bool) in
+                        completion()
+                    })
                 } else {
                     completion()
                 }
             }
             let saveBG = { (completion: @escaping () -> Void) in
-                if (self.storeType != .sqlite) {
-                    self.saveBGContext(context: innerContext, isSync: true, completion: completion)
+                if self.storeType != .sqlite {
+                    self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
+                        completion()
+                    })
                 } else {
                     completion()
                 }
@@ -422,27 +445,37 @@ extension CoreDataWrapper {
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
-            case (false, false, false): //It's main context and no main thread callback
+            //It's bg context and no main thread callback
+            case (false, true, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's main context and main thread callback
+            case (true, false, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's main context and no main thread callback
+            case (false, false, false):
                 bgCaller()
-            case (false, false, true): //It's main context and no main thread callback
+                
+            //It's main context and no main thread callback
+            case (false, false, true): debugPrint("\(tuple)"); fallthrough
+                
+            //It's main context and main thread callback
+            case (true, false, true):
                 saveMain({
                     bgCaller()
                 })
-            case (false, true, false): //It's bg context and no main thread callback
-                bgCaller()
-            case (false, true, true): //It's bg context and no main thread callback
+                
+            //It's bg context and no main thread callback
+            case (false, true, true):
                 saveBG({
                     bgCaller()
                 })
-            case (true, false, false): //It's main context and main thread callback
-                bgCaller()
-            case (true, false, true): //It's main context and main thread callback
-                saveMain({
-                    bgCaller()
-                })
-            case (true, true, false): //It's bg context and main thread callback
+                
+            //It's bg context and main thread callback
+            case (true, true, false):
                 mainCaller()
-            case (true, true, true): //It's bg context and main thread callback
+                
+            //It's bg context and main thread callback
+            case (true, true, true):
                 saveBG({
                     mainCaller()
                 })
@@ -456,12 +489,7 @@ extension CoreDataWrapper {
                                     shouldSave: Bool,
                                     completion: @escaping () -> Void,
                                     completionOnMainThread: Bool) {
-        var innerContext: NSManagedObjectContext
-        if let context = context {
-            innerContext = context
-        } else {
-            innerContext = self.mainContext
-        }
+        let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
         innerContext.perform {
             if let fetched = try? innerContext.existingObject(with: objectId) {
                 for (key, value) in properties {
@@ -469,10 +497,14 @@ extension CoreDataWrapper {
                 }
             }
             let saveMain = { (completion: @escaping () -> Void) in
-                self.saveMainContext(isSync: false, completion: completion)
+                self.saveMainContext(isSync: false, completion: { (Bool) in
+                    completion()
+                })
             }
             let saveBG = { (completion: @escaping () -> Void) in
-                self.saveBGContext(context: innerContext, isSync: true, completion: completion)
+                self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
+                    completion()
+                })
             }
             let mainCaller = {
                 self.mainContext.perform {
@@ -484,27 +516,33 @@ extension CoreDataWrapper {
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
-            case (false, false, false): //It's main context and no main thread callback
+            //It's main context and no main thread callback
+            case (false, false, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's main context and main thread callback
+            case (true, false, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's bg context and no main thread callback
+            case (false, true, false):
                 bgCaller()
-            case (false, false, true): //It's main context and no main thread callback
+            //It's main context and no main thread callback
+            case (false, false, true): debugPrint("\(tuple)"); fallthrough
+            //It's main context and main thread callback
+            case (true, false, true):
                 saveMain({
                     bgCaller()
                 })
-            case (false, true, false): //It's bg context and no main thread callback
-                bgCaller()
-            case (false, true, true): //It's bg context and no main thread callback
+            //It's bg context and no main thread callback
+            case (false, true, true):
                 saveBG({
                     bgCaller()
                 })
-            case (true, false, false): //It's main context and main thread callback
-                bgCaller()
-            case (true, false, true): //It's main context and main thread callback
-                saveMain({
-                    bgCaller()
-                })
-            case (true, true, false): //It's bg context and main thread callback
+                
+            //It's bg context and main thread callback
+            case (true, true, false):
                 mainCaller()
-            case (true, true, true): //It's bg context and main thread callback
+            //It's bg context and main thread callback
+            case (true, true, true):
                 saveBG({
                     mainCaller()
                 })
@@ -515,76 +553,83 @@ extension CoreDataWrapper {
     final public func updateAllAsyncOf<M: NSManagedObject>
         (type: M.Type,
          context: NSManagedObjectContext? = nil,
-         properties:[AnyHashable: Any],
+         properties: [AnyHashable: Any],
          predicate: NSPredicate? = nil,
          shouldSave: Bool,
          completion: @escaping () -> Void,
          completionOnMainThread: Bool) {
         
-        var innerContext: NSManagedObjectContext
-        if let context = context {
-            innerContext = context
-        } else {
-            innerContext = self.mainContext
-        }
-        let updateAllBlock = {
-            if (self.storeType == .sqlite && shouldSave) {
-                guard let entityDesc =
-                    NSEntityDescription.entity(forEntityName: String(describing: type),
-                                               in: innerContext) else {
-                                                completion()
-                                                return
-                }
-                //Batch updates are only available when you are using a SQLite persistent store.
-                let batchUpdateRequest = NSBatchUpdateRequest(entity: entityDesc)
+        let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
+        
+        //Local function
+        func sqliteBlock() {
+            guard let entityDesc =
+                NSEntityDescription.entity(forEntityName: String(describing: type),
+                                           in: innerContext) else {
+                                            completion()
+                                            return
+            }
+            //Batch updates are only available when you are using a SQLite persistent store.
+            let batchUpdateRequest = NSBatchUpdateRequest(entity: entityDesc)
+            
+            batchUpdateRequest.resultType = .updatedObjectIDsResultType
+            batchUpdateRequest.propertiesToUpdate = properties as [AnyHashable: Any]
+            batchUpdateRequest.predicate = predicate
+            do {
+                let batchUpdateResult = try innerContext.execute(batchUpdateRequest) as? NSBatchUpdateResult
+                let objectIDArray = batchUpdateResult?.result as? [NSManagedObjectID]
                 
-                batchUpdateRequest.resultType = .updatedObjectIDsResultType
-                batchUpdateRequest.propertiesToUpdate = properties as [AnyHashable: Any]
-                batchUpdateRequest.predicate = predicate
-                do {
-                    let batchUpdateResult = try innerContext.execute(batchUpdateRequest) as? NSBatchUpdateResult
-                    let objectIDArray = batchUpdateResult?.result as? [NSManagedObjectID]
-                    
-                    if let ids = objectIDArray, ids.count > 0 {
-                        let changes = [NSUpdatedObjectsKey: ids] as [AnyHashable: Any]
-                        NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes,
-                                                            into: [innerContext])
-                    }
-                } catch let error {
-                    debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
+                if let ids = objectIDArray, ids.count > 0 {
+                    let changes = [NSUpdatedObjectsKey: ids] as [AnyHashable: Any]
+                    NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes,
+                                                        into: [innerContext, self.mainContext])
                 }
-            } else {
-                let fetchRequest = NSFetchRequest<NSFetchRequestResult>.init(entityName: String(describing: type))
-                fetchRequest.returnsObjectsAsFaults = false
-                fetchRequest.predicate = predicate
-                do {
-                    let fetchedObjects = try innerContext.fetch(fetchRequest) as? [M]
-                    if let fetchedObjects = fetchedObjects {
-                        for object in fetchedObjects {
-                            for (key, value) in properties {
-                                if key is String {
-                                    object.setValue(value, forKey: key as! String)
-                                }
-                            }
+            } catch let error {
+                debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
+            }
+        }
+        //Local function
+        func nonSqliteBlock () {
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>.init(entityName: String(describing: type))
+            fetchRequest.returnsObjectsAsFaults = false
+            fetchRequest.predicate = predicate
+            do {
+                if let fetchedObjects = try innerContext.fetch(fetchRequest) as? [M] {
+                    for object in fetchedObjects {
+                        for (key, value) in properties {
+                            //if key is String {
+                            object.setValue(value, forKey: "\(key)")
+                            //}
                         }
                     }
-                } catch let error {
-                    debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
                 }
+            } catch let error {
+                debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
+            }
+        }
+        let updateAllBlock = {
+            if self.storeType == .sqlite && shouldSave {
+                sqliteBlock()
+            } else {
+                nonSqliteBlock()
             }
         }
         innerContext.perform {
             updateAllBlock()
             let saveMain = { (completion: @escaping () -> Void) in
-                if (self.storeType != .sqlite) {
-                    self.saveMainContext(isSync: false, completion: completion)
+                if self.storeType != .sqlite {
+                    self.saveMainContext(isSync: false, completion: { (Bool) in
+                        completion()
+                    })
                 } else {
                     completion()
                 }
             }
             let saveBG = { (completion: @escaping () -> Void) in
-                if (self.storeType != .sqlite) {
-                    self.saveBGContext(context: innerContext, isSync: true, completion: completion)
+                if self.storeType != .sqlite {
+                    self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
+                        completion()
+                    })
                 } else {
                     completion()
                 }
@@ -599,27 +644,37 @@ extension CoreDataWrapper {
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
-            case (false, false, false): //It's main context and no main thread callback
+            //It's main context and no main thread callback
+            case (false, false, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's bg context and no main thread callback
+            case (false, true, false): debugPrint("\(tuple)"); fallthrough
+                
+            //It's main context and main thread callback
+            case (true, false, false):
                 bgCaller()
-            case (false, false, true): //It's main context and no main thread callback
+                
+            //It's main context and no main thread callback
+            case (false, false, true): debugPrint("\(tuple)"); fallthrough
+                
+            //It's main context and main thread callback
+            case (true, false, true):
                 saveMain({
                     bgCaller()
                 })
-            case (false, true, false): //It's bg context and no main thread callback
-                bgCaller()
-            case (false, true, true): //It's bg context and no main thread callback
+                
+            //It's bg context and no main thread callback
+            case (false, true, true):
                 saveBG({
                     bgCaller()
                 })
-            case (true, false, false): //It's main context and main thread callback
-                bgCaller()
-            case (true, false, true): //It's main context and main thread callback
-                saveMain({
-                    bgCaller()
-                })
-            case (true, true, false): //It's bg context and main thread callback
+                
+            //It's bg context and main thread callback
+            case (true, true, false):
                 mainCaller()
-            case (true, true, true): //It's bg context and main thread callback
+                
+            //It's bg context and main thread callback
+            case (true, true, true):
                 saveBG({
                     mainCaller()
                 })
@@ -636,7 +691,7 @@ extension CoreDataWrapper {
         
         var innerContext: NSManagedObjectContext
         if let context = context {
-             innerContext = context
+            innerContext = context
         } else {
             innerContext = self.mainContext
         }
@@ -695,18 +750,14 @@ extension CoreDataWrapper {
                 
                 var expressionResultType: NSAttributeType
                 switch operation {
-                case .count: fallthrough
-                case .min:   fallthrough
-                case .max:   fallthrough
+                case .count: debugPrint("\(operation)"); fallthrough
+                case .min:   debugPrint("\(operation)"); fallthrough
+                case .max:   debugPrint("\(operation)"); fallthrough
                 case .sum:
                     expressionResultType = .integer64AttributeType
                     
                 case .average:
                     expressionResultType = .doubleAttributeType
-                    
-                case .lowercase: fallthrough
-                case .uppercase:
-                    expressionResultType = .stringAttributeType
                 }
                 expressionDesc.expressionResultType = expressionResultType
                 

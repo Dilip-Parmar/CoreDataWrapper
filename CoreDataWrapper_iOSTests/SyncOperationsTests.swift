@@ -137,7 +137,8 @@ class SyncOperationsTests: XCTestCase {
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car3)
 
-        coreDataWrapper.deleteAllOf(type: Car.self, shouldSave: false)
+        let deleted = coreDataWrapper.deleteAllOf(type: Car.self, shouldSave: false)
+        XCTAssert(deleted)
         
         let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
         XCTAssertEqual(fetched?.count, 0)
@@ -153,8 +154,9 @@ class SyncOperationsTests: XCTestCase {
         let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car)
         
-        coreDataWrapper.updateBy(objectId: car!.objectID, properties: ["model": "dp1", "regNo": 40], shouldSave: false)
+        let updated = coreDataWrapper.updateBy(objectId: car!.objectID, properties: ["model": "dp1", "regNo": 40], shouldSave: true)
         
+        XCTAssert(updated)
         XCTAssertEqual(car?.model, "dp1")
         XCTAssertEqual(car?.regNo, 40)
     }
@@ -300,7 +302,8 @@ class SyncOperationsTests: XCTestCase {
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
 
-        coreDataWrapper.deleteAllOf(type: Car.self, shouldSave: true)
+        let deleted = coreDataWrapper.deleteAllOf(type: Car.self, shouldSave: true)
+        XCTAssert(deleted)
         
         let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: nil)
         XCTAssertEqual(fetched?.count, 0)

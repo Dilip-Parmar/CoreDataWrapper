@@ -155,8 +155,10 @@ extension CoreDataWrapper {
     // MARK: - Delete all
     final public func deleteAllOf<M: NSManagedObject>(type: M.Type,
                                                       predicate: NSPredicate? = nil,
-                                                      shouldSave: Bool) {
-        let sqliteDeleteAll = {
+                                                      shouldSave: Bool) -> Bool {
+        var result = false
+        let sqliteDeleteAll = { () -> Bool in
+            var sqliteResult = false
             let request = NSFetchRequest<NSFetchRequestResult>.init(entityName: String(describing: type))
             request.predicate = predicate
             let batchDeleteRequest = NSBatchDeleteRequest.init(fetchRequest: request)
@@ -168,14 +170,18 @@ extension CoreDataWrapper {
                     let deletedObjects = [NSDeletedObjectsKey: ids]
                     NSManagedObjectContext.mergeChanges(fromRemoteContextSave: deletedObjects as [AnyHashable: Any],
                                                         into: [self.mainContext])
+                    sqliteResult = true
                 }
             } catch let error {
                 debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
+                sqliteResult = false
             }
+            return sqliteResult
         }
-        let nonSqliteDeleteAll = {
+        let nonSqliteDeleteAll = { () -> Bool in
+            var nonSqliteResult = false
             guard let fetched = self.fetchAllOf(type: type, predicate: predicate, sortBy: nil) else {
-                return
+                return false
             }
             self.mainContext.performAndWait {
                 for object in fetched where object.isDeleted == false {
@@ -183,31 +189,41 @@ extension CoreDataWrapper {
                     self.mainContext.delete(object)
                     //}
                 }
+                nonSqliteResult = true
                 if shouldSave {
-                    self.saveMainContext(isSync: true, completion: nil)
+                    self.saveMainContext(isSync: true, completion: { (isSuccess) in
+                        nonSqliteResult = isSuccess
+                    })
                 }
             }
+            return nonSqliteResult
         }
         if self.storeType == .sqlite && shouldSave {
-            sqliteDeleteAll()
+            result = sqliteDeleteAll()
         } else {
-            nonSqliteDeleteAll()
+            result = nonSqliteDeleteAll()
         }
+        return result
     }
     // MARK: - Update
     final public func updateBy(objectId: NSManagedObjectID,
                                properties: [String: Any],
-                               shouldSave: Bool) {
-        
-        let fetched = self.fetchBy(objectId: objectId)
-        self.mainContext.performAndWait {
-            for (key, value) in properties {
-                fetched?.setValue(value, forKey: key)
-            }
-            if shouldSave {
-                self.saveMainContext(isSync: true, completion: nil)
+                               shouldSave: Bool) -> Bool {
+        var result = false
+        if let fetched = self.fetchBy(objectId: objectId) {
+            self.mainContext.performAndWait {
+                for (key, value) in properties {
+                    fetched.setValue(value, forKey: key)
+                }
+                result = true
+                if shouldSave {
+                    self.saveMainContext(isSync: true, completion: { (isSuccess) in
+                        result = isSuccess
+                    })
+                }
             }
         }
+        return result
     }
     // MARK: - Update all
     final public func updateAllOf<M: NSManagedObject>
@@ -218,7 +234,7 @@ extension CoreDataWrapper {
         
         var result = false
         let sqliteUpdateAll = { () -> Bool in
-            var result = false
+            var sqliteResult = false
             guard let entityDesc = NSEntityDescription.entity(forEntityName: String(describing: type),
                                                               in: self.mainContext) else {
                                                                 return false
@@ -234,16 +250,16 @@ extension CoreDataWrapper {
                 if let ids = ids, ids.count > 0 {
                     let updatedObjects = [NSUpdatedObjectsKey: ids] as [AnyHashable: Any]
                     NSManagedObjectContext.mergeChanges(fromRemoteContextSave: updatedObjects, into: [self.mainContext])
-                    result = true
+                    sqliteResult = true
                 }
             } catch let error {
                 debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
-                result = false
+                sqliteResult = false
             }
-            return result
+            return sqliteResult
         }
         let nonSqliteUpdateAll = { () -> Bool in
-            
+            var nonSqliteResult = false
             guard let fetched = self.fetchAllOf(type: type, predicate: predicate, sortBy: nil) else {
                 return false
             }
@@ -255,11 +271,14 @@ extension CoreDataWrapper {
                         //}
                     }
                 }
+                nonSqliteResult = true
                 if shouldSave {
-                    self.saveMainContext(isSync: true, completion: nil)
+                    self.saveMainContext(isSync: true, completion: { (isSuccess) in
+                        nonSqliteResult = isSuccess
+                    })
                 }
             }
-            return true
+            return nonSqliteResult
         }
         if self.storeType == .sqlite && shouldSave {
             self.mainContext.performAndWait {

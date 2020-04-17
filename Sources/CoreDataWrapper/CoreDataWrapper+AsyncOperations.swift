@@ -372,15 +372,17 @@ extension CoreDataWrapper {
          context: NSManagedObjectContext? = nil,
          predicate: NSPredicate? = nil,
          shouldSave: Bool,
-         completion: @escaping () -> Void,
+         completion: @escaping (Bool) -> Void,
          completionOnMainThread: Bool) {
         
         let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
-        let deleteAllObjectBlock = {
+        let deleteAllObjectBlock = { () -> Bool in
+            var result = false
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>.init(entityName: String(describing: type))
             fetchRequest.predicate = predicate
             //Local function
-            func sqliteBlock() {
+            func sqliteBlock() -> Bool {
+                var sqliteResult = false
                 let deleteBatchRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
                 deleteBatchRequest.resultType = .resultTypeObjectIDs
                 do {
@@ -390,13 +392,16 @@ extension CoreDataWrapper {
                         let changedObjects = [NSDeletedObjectsKey: ids]
                         NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changedObjects as [AnyHashable: Any],
                                                             into: [innerContext, self.mainContext])
+                        sqliteResult = true
                     }
                 } catch let error {
                     debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
                 }
+                return sqliteResult
             }
             //Local function
-            func nonSqliteBlock() {
+            func nonSqliteBlock() -> Bool {
+                var nonSqliteResult = false
                 fetchRequest.returnsObjectsAsFaults = false
                 do {
                     let fetchedObjects = try? innerContext.fetch(fetchRequest) as? [M]
@@ -404,44 +409,49 @@ extension CoreDataWrapper {
                         for object in fetchedObjects where object.isDeleted == false {
                             innerContext.delete(object)
                         }
+                        nonSqliteResult = true
+                    } else {
+                        nonSqliteResult = false
                     }
                 }
+                return nonSqliteResult
             }
             //Important: Batch delete are only available when you are using a SQLite persistent store.
             if self.storeType == .sqlite && shouldSave {
-                sqliteBlock()
+                result = sqliteBlock()
             } else {
-                nonSqliteBlock()
+                result = nonSqliteBlock()
             }
+            return result
         }
         innerContext.perform {
-            deleteAllObjectBlock()
+            let isDeleted = deleteAllObjectBlock()
             
-            let saveMain = { (completion: @escaping () -> Void) in
+            let saveMain = { (completion: @escaping (Bool) -> Void) in
                 if self.storeType != .sqlite {
-                    self.saveMainContext(isSync: false, completion: { (Bool) in
-                        completion()
+                    self.saveMainContext(isSync: false, completion: { (isSuccess) in
+                        completion(isSuccess && isDeleted)
                     })
                 } else {
-                    completion()
+                    completion(isDeleted)
                 }
             }
-            let saveBG = { (completion: @escaping () -> Void) in
+            let saveBG = { (completion: @escaping (Bool) -> Void) in
                 if self.storeType != .sqlite {
-                    self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
-                        completion()
+                    self.saveBGContext(context: innerContext, isSync: true, completion: { (isSuccess) in
+                        completion(isSuccess && isDeleted)
                     })
                 } else {
-                    completion()
+                    completion(isDeleted)
                 }
             }
-            let mainCaller = {
+            let mainCaller = { (isSuccess: Bool) in
                 self.mainContext.perform {
-                    completion()
+                    completion(isDeleted)
                 }
             }
-            let bgCaller = {
-                completion()
+            let bgCaller = { (isSuccess: Bool) in
+                completion(isDeleted)
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
@@ -453,31 +463,31 @@ extension CoreDataWrapper {
                 
             //It's main context and no main thread callback
             case (false, false, false):
-                bgCaller()
+                bgCaller(isDeleted)
                 
             //It's main context and no main thread callback
             case (false, false, true): debugPrint("\(tuple)"); fallthrough
                 
             //It's main context and main thread callback
             case (true, false, true):
-                saveMain({
-                    bgCaller()
+                saveMain({ (isSuccess: Bool) in
+                    bgCaller(isSuccess)
                 })
                 
             //It's bg context and no main thread callback
             case (false, true, true):
-                saveBG({
-                    bgCaller()
+                saveBG({ (isSuccess: Bool) in
+                    bgCaller(isSuccess)
                 })
                 
             //It's bg context and main thread callback
             case (true, true, false):
-                mainCaller()
+                mainCaller(isDeleted)
                 
             //It's bg context and main thread callback
             case (true, true, true):
-                saveBG({
-                    mainCaller()
+                saveBG({ (isSuccess: Bool) in
+                    mainCaller(isSuccess)
                 })
             }
         }

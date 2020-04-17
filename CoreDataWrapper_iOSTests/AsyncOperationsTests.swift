@@ -163,7 +163,9 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        coreDataWrapper.deleteAllAsyncOf(type: Car.self, shouldSave: false, completion: {
+        coreDataWrapper.deleteAllAsyncOf(type: Car.self, shouldSave: false, completion: { (isDeleted) in
+            
+            XCTAssert(isDeleted)
             
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 0)
@@ -359,8 +361,9 @@ class AsyncOperationsTests: XCTestCase {
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.deleteAllAsyncOf(type: Car.self, shouldSave: true, completion: {
+        coreDataWrapper.deleteAllAsyncOf(type: Car.self, shouldSave: true, completion: { (isDeleted) in
             
+            XCTAssert(isDeleted)
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: nil)
             XCTAssertEqual(fetched?.count, 0)
 
@@ -599,7 +602,9 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: {
+        coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: { (isDeleted) in
+            
+            XCTAssert(isDeleted)
             
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 0)
@@ -627,7 +632,9 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: {
+        coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: { (isDeleted) in
+        
+            XCTAssert(isDeleted)
             
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 0)
@@ -977,7 +984,9 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: {
+        coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: { (isDeleted) in
+            
+            XCTAssert(isDeleted)
             
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: nil)
             XCTAssertEqual(fetched?.count, 0)

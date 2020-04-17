@@ -23,11 +23,11 @@
 import XCTest
 
 class SyncOperationsTests: XCTestCase {
-
+    
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
-
+    
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
@@ -110,11 +110,11 @@ class SyncOperationsTests: XCTestCase {
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car2)
-
+        
         
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car3)
-
+        
         let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
         XCTAssertNotNil(fetched)
         
@@ -133,10 +133,10 @@ class SyncOperationsTests: XCTestCase {
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car2)
-
+        
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car3)
-
+        
         let deleted = coreDataWrapper.deleteAllOf(type: Car.self, shouldSave: false)
         XCTAssert(deleted)
         
@@ -173,10 +173,10 @@ class SyncOperationsTests: XCTestCase {
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
-
+        
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: false)
         XCTAssertNotNil(car3)
-
+        
         let updated = coreDataWrapper.updateAllOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
         
         XCTAssert(updated)
@@ -202,10 +202,10 @@ class SyncOperationsTests: XCTestCase {
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
-
+        
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: false)
         XCTAssertNotNil(car3)
-
+        
         let count = coreDataWrapper.countOf(type: Car.self)
         XCTAssertEqual(count, 3)
     }
@@ -222,10 +222,10 @@ class SyncOperationsTests: XCTestCase {
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
-
+        
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
-
+        
         let properties = coreDataWrapper.fetchPropertiesOf(type: Car.self, propertiesToFetch: ["model", "regNo"], sortBy: ["model": true])
         XCTAssertNotNil(properties)
         
@@ -238,16 +238,16 @@ class SyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
-                
+        
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
-
+        
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
-
+        
         let sum = coreDataWrapper.performOperation(operation: .sum, type: Car.self, propertyName: "regNo")
         XCTAssertNotNil(sum)
         
@@ -262,16 +262,16 @@ class SyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
-                
+        
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
-
+        
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
-
+        
         let updated = coreDataWrapper.updateAllOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssert(updated)
         
@@ -292,16 +292,16 @@ class SyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
-                
+        
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
-
+        
         let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
-
+        
         let deleted = coreDataWrapper.deleteAllOf(type: Car.self, shouldSave: true)
         XCTAssert(deleted)
         

@@ -349,6 +349,75 @@ class AsyncOperationsTests: XCTestCase {
         coreDataWrapper.purgeStore()
     }
     
+    func testUpdateAllSqliteAsyncMainThread() {
+        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                   databaseFileName: "CoreDataWrapper",
+                                                   bundle: Bundle(for: AsyncOperationsTests.self),
+                                                   storeType: .sqlite)
+        XCTAssertNotNil(coreDataWrapper)
+        
+        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        XCTAssertNotNil(car1)
+        
+        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        XCTAssertNotNil(car2)
+        
+        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        XCTAssertNotNil(car3)
+        
+        let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.updateAllAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false, completion: { (updated) in
+            
+            XCTAssert(updated)
+            
+            let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
+            XCTAssertEqual(fetched?.count, 3)
+            
+            let filtered = fetched!.filter { (car) -> Bool in
+                car.model == "Audi" && car.regNo == 30
+            }
+            XCTAssertEqual(filtered.count, 3)
+            expectation.fulfill()
+            
+        }, completionOnMainThread: true)
+        wait(for: [expectation], timeout: 1.0)
+        
+        coreDataWrapper.purgeStore()
+    }
+    
+    func testUpdateAllSqliteAsyncMainThreadBGContext() {
+        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                   databaseFileName: "CoreDataWrapper",
+                                                   bundle: Bundle(for: AsyncOperationsTests.self),
+                                                   storeType: .sqlite)
+        XCTAssertNotNil(coreDataWrapper)
+        
+        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        XCTAssertNotNil(car1)
+        
+        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        XCTAssertNotNil(car2)
+        
+        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        XCTAssertNotNil(car3)
+        
+        let context = coreDataWrapper.newBgContext()
+        
+        let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: false, completion: { (updated) in
+            
+            XCTAssert(updated)
+            XCTAssert(Thread.isMainThread)
+            
+            expectation.fulfill()
+            
+        }, completionOnMainThread: true)
+        wait(for: [expectation], timeout: 1.0)
+        
+        coreDataWrapper.purgeStore()
+    }
+    
+    
     func testDeleteAllSqliteAsync() {
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
@@ -371,12 +440,12 @@ class AsyncOperationsTests: XCTestCase {
             XCTAssert(isDeleted)
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: nil)
             XCTAssertEqual(fetched?.count, 0)
-
+            
             expectation.fulfill()
-
+            
         }, completionOnMainThread: false)
         wait(for: [expectation], timeout: 1.0)
-       
+        
         coreDataWrapper.purgeStore()
     }
     
@@ -638,13 +707,13 @@ class AsyncOperationsTests: XCTestCase {
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
         coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: { (isDeleted) in
-        
+            
             XCTAssert(isDeleted)
             
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 0)
             XCTAssert(Thread.isMainThread)
-
+            
             expectation.fulfill()
         }, completionOnMainThread: true)
         wait(for: [expectation], timeout: 1.0)
@@ -663,7 +732,7 @@ class AsyncOperationsTests: XCTestCase {
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
         coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: {
-
+            
             let car = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssertEqual(car!.model, "dp1")
             XCTAssertEqual(car!.regNo, 40)
@@ -719,9 +788,9 @@ class AsyncOperationsTests: XCTestCase {
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
         coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
-        
+            
             XCTAssert(updated)
-        
+            
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
             
@@ -754,9 +823,9 @@ class AsyncOperationsTests: XCTestCase {
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
         coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
-        
+            
             XCTAssert(updated)
-        
+            
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
             
@@ -1001,12 +1070,12 @@ class AsyncOperationsTests: XCTestCase {
             
             let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: nil)
             XCTAssertEqual(fetched?.count, 0)
-
+            
             expectation.fulfill()
-
+            
         }, completionOnMainThread: false)
         wait(for: [expectation], timeout: 1.0)
-       
+        
         coreDataWrapper.purgeStore()
     }
 }

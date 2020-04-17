@@ -92,7 +92,8 @@ class SyncOperationsTests: XCTestCase {
         let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car)
         
-        coreDataWrapper.deleteBy(objectId: car!.objectID, shouldSave: true)
+        let isDeleted = coreDataWrapper.deleteBy(objectId: car!.objectID, shouldSave: true)
+        XCTAssert(isDeleted)
         
         let fetched = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
         XCTAssertNil(fetched)

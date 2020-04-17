@@ -308,7 +308,7 @@ extension CoreDataWrapper {
         (objectId: NSManagedObjectID,
          context: NSManagedObjectContext? = nil,
          shouldSave: Bool,
-         completion: @escaping () -> Void,
+         completion: @escaping (Bool) -> Void,
          completionOnMainThread: Bool) {
         var innerContext: NSManagedObjectContext
         if let context = context {
@@ -317,53 +317,55 @@ extension CoreDataWrapper {
             innerContext = self.mainContext
         }
         innerContext.perform {
+            var isDeleted = false
             if let existingObject = try? innerContext.existingObject(with: objectId),
                 !existingObject.isDeleted {
                 innerContext.delete(existingObject)
+                isDeleted = true
             }
-            let saveMain = { (completion: @escaping () -> Void) in
-                self.saveMainContext(isSync: false, completion: { (Bool) in
-                    completion()
+            let saveMain = { (completion: @escaping (Bool) -> Void) in
+                self.saveMainContext(isSync: false, completion: { (isSuccess) in
+                    completion(isSuccess && isDeleted)
                 })
             }
-            let saveBG = { (completion: @escaping () -> Void) in
-                self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
-                    completion()
+            let saveBG = { (completion: @escaping (Bool) -> Void) in
+                self.saveBGContext(context: innerContext, isSync: true, completion: { (isSuccess) in
+                    completion(isSuccess && isDeleted)
                 })
             }
-            let mainCaller = {
+            let mainCaller = { (isSuccess: Bool) in
                 self.mainContext.perform {
-                    completion()
+                    completion(isSuccess)
                 }
             }
-            let bgCaller = {
-                completion()
+            let bgCaller = { (isSuccess: Bool) in
+                completion(isSuccess)
             }
             let tuple = (completionOnMainThread, (context != nil), shouldSave)
             switch tuple {
             case (false, false, false): //It's main context and no main thread callback
-                bgCaller()
+                bgCaller(isDeleted)
             case (false, false, true): //It's main context and no main thread callback
-                saveMain({
-                    bgCaller()
+                saveMain({ (isSuccess: Bool) in
+                    bgCaller(isSuccess)
                 })
             case (false, true, false): //It's bg context and no main thread callback
-                bgCaller()
+                bgCaller(isDeleted)
             case (false, true, true): //It's bg context and no main thread callback
-                saveBG({
-                    bgCaller()
+                saveBG({ (isSuccess: Bool) in
+                    bgCaller(isSuccess)
                 })
             case (true, false, false): //It's main context and main thread callback
-                bgCaller()
+                bgCaller(isDeleted)
             case (true, false, true): //It's main context and main thread callback
-                saveMain({
-                    bgCaller()
+                saveMain({ (isSuccess: Bool) in
+                    bgCaller(isSuccess)
                 })
             case (true, true, false): //It's bg context and main thread callback
-                mainCaller()
+                mainCaller(isDeleted)
             case (true, true, true): //It's bg context and main thread callback
-                saveBG({
-                    mainCaller()
+                saveBG({ (isSuccess: Bool) in
+                    mainCaller(isSuccess)
                 })
             }
         }
@@ -513,12 +515,12 @@ extension CoreDataWrapper {
             }
             let saveMain = { (completion: @escaping (Bool) -> Void) in
                 self.saveMainContext(isSync: false, completion: { (isSuccess) in
-                    completion(isSuccess)
+                    completion(isSuccess && isUpdated)
                 })
             }
             let saveBG = { (completion: @escaping (Bool) -> Void) in
                 self.saveBGContext(context: innerContext, isSync: true, completion: { (isSuccess) in
-                    completion(isSuccess)
+                    completion(isSuccess && isUpdated)
                 })
             }
             let mainCaller = { (updateResult: Bool) in

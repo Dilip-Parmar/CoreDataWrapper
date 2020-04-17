@@ -111,7 +111,10 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, shouldSave: true, completion: {
+        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, shouldSave: true, completion: { (isDeleted) in
+            
+            XCTAssert(isDeleted)
+            
             let fetched = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssertNil(fetched)
             expectation.fulfill()
@@ -572,7 +575,10 @@ class AsyncOperationsTests: XCTestCase {
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
         
-        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: context, shouldSave: true, completion: {
+        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: context, shouldSave: true, completion: { (isDeleted) in
+                       
+            XCTAssert(isDeleted)
+                       
             let fetched = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssert(fetched!.isDeleted)
             
@@ -595,7 +601,10 @@ class AsyncOperationsTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: context, shouldSave: true, completion: {
+        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: context, shouldSave: true, completion: {  (isDeleted) in
+                   
+            XCTAssert(isDeleted)
+                   
             let fetched = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssert(fetched!.isDeleted)
             XCTAssert(Thread.isMainThread)

@@ -140,7 +140,8 @@ final public class CoreDataWrapper {
         case .sqlite: debugPrint("\(self.storeType)"); fallthrough
         case .binary:
             if let storeURL = self.storeURL {
-                storeDescription.url = storeURL
+                let dbFileNameWithExt = self.databaseFileName + self.storeType.getStoreFileExt()
+                storeDescription.url = storeURL.appendingPathComponent(dbFileNameWithExt)
             } else {
                 storeDescription.url = self.storeFullURL
                 self.storeURL = self.storeFullURL
@@ -170,6 +171,7 @@ final public class CoreDataWrapper {
     @available(iOS 12.0, macOS 10.13, *)
     final public func saveMainContext(isSync: Bool,
                                       completion: ((Bool) -> Void)?) {
+        debugPrint("called \(#function) at = \(Date())")
         let saveChangesBlock = {
             if self.mainContext.hasChanges {
                 do {
@@ -193,6 +195,7 @@ final public class CoreDataWrapper {
     final public func saveBGContext(context: NSManagedObjectContext,
                                     isSync: Bool,
                                     completion: ((Bool) -> Void)?) {
+        debugPrint("called \(#function) at = \(Date())")
         let saveChangesBlock = {
             if context.hasChanges {
                 do {

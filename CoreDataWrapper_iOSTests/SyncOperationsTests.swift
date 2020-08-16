@@ -24,8 +24,22 @@ import XCTest
 
 class SyncOperationsTests: XCTestCase {
     
+    private var coreDataWrapper: CoreDataWrapper!
+    
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                    databaseFileName: "CoreDataWrapper",
+                                                    bundle: Bundle(for: AsyncOperationsTests.self),
+                                                    storeType: .inMemory)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        self.coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
     }
     
     override func tearDown() {
@@ -33,7 +47,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testInitialization() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .inMemory)
@@ -41,7 +55,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testAddObj() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .inMemory)
@@ -52,7 +66,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testAddObjWidProps() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .inMemory)
@@ -66,7 +80,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testFetchObj() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .inMemory)
@@ -83,11 +97,6 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testDeleteObj() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: SyncOperationsTests.self),
-                                                   storeType: .inMemory)
-        XCTAssertNotNil(coreDataWrapper)
         
         let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car)
@@ -100,7 +109,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testFetchAll() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .inMemory)
@@ -123,7 +132,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testDeleteAll() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .inMemory)
@@ -146,10 +155,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testUpdateObj() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: SyncOperationsTests.self),
-                                                   storeType: .inMemory)
+
         XCTAssertNotNil(coreDataWrapper)
         
         let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
@@ -163,7 +169,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testUpdateAll() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .inMemory)
@@ -192,7 +198,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testCount() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .inMemory)
@@ -212,10 +218,7 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testFetchProperties() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: SyncOperationsTests.self),
-                                                   storeType: .inMemory)
+
         XCTAssertNotNil(coreDataWrapper)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
@@ -234,11 +237,20 @@ class SyncOperationsTests: XCTestCase {
     }
     
     func testPerformOperation() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        self.coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
@@ -254,15 +266,28 @@ class SyncOperationsTests: XCTestCase {
         
         XCTAssertEqual(sum!.first!["regNo"] as! Int, 70)
         
-        coreDataWrapper.purgeStore()
+        let newLoadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.purgeStore(completionBlock: { (isSuccess) in
+            XCTAssertTrue(isSuccess)
+            newLoadExpectation.fulfill()
+        })
+        wait(for: [newLoadExpectation], timeout: 5.0)
     }
     
     func testUpdateAllSqlite() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        self.coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
@@ -284,15 +309,28 @@ class SyncOperationsTests: XCTestCase {
         }
         XCTAssertEqual(filtered.count, 3)
         
-        coreDataWrapper.purgeStore()
+        let newLoadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.purgeStore(completionBlock: { (isSuccess) in
+            XCTAssertTrue(isSuccess)
+            newLoadExpectation.fulfill()
+        })
+        wait(for: [newLoadExpectation], timeout: 5.0)
     }
     
     func testDeleteAllSqlite() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: SyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        self.coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
@@ -309,6 +347,11 @@ class SyncOperationsTests: XCTestCase {
         let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: nil)
         XCTAssertEqual(fetched?.count, 0)
         
-        coreDataWrapper.purgeStore()
+        let newLoadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.purgeStore(completionBlock: { (isSuccess) in
+            XCTAssertTrue(isSuccess)
+            newLoadExpectation.fulfill()
+        })
+        wait(for: [newLoadExpectation], timeout: 5.0)
     }
 }

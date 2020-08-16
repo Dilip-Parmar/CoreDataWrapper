@@ -23,20 +23,32 @@
 import XCTest
 
 class CoreDataWrapperTest: XCTestCase {
-
+    
+    private var coreDataWrapper: CoreDataWrapper!
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
+        
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                    databaseFileName: "CoreDataWrapper",
+                                                    bundle: Bundle(for: SyncOperationsTests.self),
+                                                    storeType: .inMemory)
+        XCTAssertNotNil(self.coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        self.coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
     }
-
+    
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
-
+    
     func testResetChangesInContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: SyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
         let car = coreDataWrapper.addOf(type: Car.self)
@@ -52,10 +64,6 @@ class CoreDataWrapperTest: XCTestCase {
     }
     
     func testRollbackInContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: SyncOperationsTests.self),
-                                                   storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
         
         let _ = coreDataWrapper.deleteAllOf(type: Car.self, shouldSave: true)
@@ -78,5 +86,55 @@ class CoreDataWrapperTest: XCTestCase {
         
         let fetched = coreDataWrapper.fetchAllOf(type: Car.self)
         XCTAssertEqual(fetched?.count, 1)
+    }
+    
+    func testBGContextNotNil() {
+        XCTAssertNotNil(coreDataWrapper)
+        
+        XCTAssertNotNil(coreDataWrapper.bgContext)
+    }
+    
+    func testNewBGContextNotNil() {
+        XCTAssertNotNil(coreDataWrapper)
+        
+        XCTAssertNotNil(coreDataWrapper.newBgContext)
+    }
+    
+    func testStoreCoordinatorNotNil() {
+        XCTAssertNotNil(coreDataWrapper)
+        XCTAssertNotNil(coreDataWrapper.storeCoordinator)
+    }
+    
+    func testManagedModelNotNil() {
+        XCTAssertNotNil(coreDataWrapper)
+        XCTAssertNotNil(coreDataWrapper.managedObjectModel)
+    }
+    
+    func testPurgeStoreBinary() {
+        self.coreDataWrapper.purgeStore()
+        self.coreDataWrapper = nil
+        
+        XCTAssertNil(self.coreDataWrapper)
+        
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                    databaseFileName: "CoreDataWrapperBin",
+                                                    bundle: Bundle(for: CoreDataWrapperTest.self),
+                                                    storeType: .binary)
+        XCTAssertNotNil(self.coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        self.coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
+        
+        let newLoadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.purgeStore(completionBlock: { (isSuccess) in
+            XCTAssertTrue(isSuccess)
+            newLoadExpectation.fulfill()
+        })
+        wait(for: [newLoadExpectation], timeout: 5.0)
     }
 }

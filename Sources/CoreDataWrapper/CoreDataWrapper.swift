@@ -33,6 +33,7 @@ final public class CoreDataWrapper {
     public private (set) var mergePolicy: NSMergePolicy
     public private (set) var databaseFileName: String = ""
     public private (set) var error: NSError?
+    private var container: NSPersistentContainer?
     
     // MARK: Initializers
     @available(iOS 12.0, macOS 10.13, *)
@@ -58,19 +59,25 @@ final public class CoreDataWrapper {
     // MARK: Persistent container
     @available(iOS 12.0, macOS 10.13, *)
     final public lazy var persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: self.modelFileName, managedObjectModel: self.model)
-        container.persistentStoreDescriptions = [self.storeDescription]
-        
-        container.loadPersistentStores(completionHandler: { [weak self] (storeDescription, error) in
+        self.container = NSPersistentContainer(name: self.modelFileName, managedObjectModel: self.model)
+        self.container?.persistentStoreDescriptions = [self.storeDescription]
+        return self.container!
+    }()
+    
+    @available(iOS 12.0, macOS 10.13, *)
+    final public func loadStore(completionBlock: @escaping ((Bool, NSError?) -> Void)) {
+        self.persistentContainer.loadPersistentStores(completionHandler: { [weak self] (storeDescription, error) in
             if let error = error as NSError? {
                 debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
                 self?.error = error
+                completionBlock(true, error)
+            } else {
+                completionBlock(true, nil)
             }
             debugPrint(storeDescription.url!)
             debugPrint(storeDescription.type)
         })
-        return container
-    }()
+    }
     
     // MARK: Main context
     @available(iOS 12.0, macOS 10.13, *)
@@ -234,30 +241,41 @@ final public class CoreDataWrapper {
     }
     // MARK: Destory
     @available(iOS 12.0, macOS 10.13, *)
-    final public func purgeStore() {
+    final public func purgeStore(completionBlock: ((Bool) -> Void)? = nil) {
         guard let storeCoordinator = self.mainContext.persistentStoreCoordinator,
             let storeURL = self.storeURL else {
+                completionBlock?(false)
                 return
         }
         switch self.storeType {
         case .inMemory:
             break
         case .binary:
-            try? storeCoordinator.destroyPersistentStore(at: storeURL,
-                                                         ofType: storeType.getStorageType(),
-                                                         options: nil)
-            try? FileManager.default.removeItem(at: storeURL)
+            do {
+                try storeCoordinator.destroyPersistentStore(at: storeURL,
+                                                            ofType: storeType.getStorageType(),
+                                                            options: nil)
+                completionBlock?(true)
+            } catch {
+                completionBlock?(false)
+            }
         case .sqlite:
-            try? storeCoordinator.destroyPersistentStore(at: storeURL,
-                                                         ofType: storeType.getStorageType(),
-                                                         options: nil)
-            try? FileManager.default.removeItem(at: storeURL)
-            
-            let writeAheadLog = storeURL.path + "-wal"
-            try? FileManager.default.removeItem(atPath: writeAheadLog)
-            
-            let sharedMemoryfile = storeURL.path + "-shm"
-            try? FileManager.default.removeItem(atPath: sharedMemoryfile)
+            do {
+                try storeCoordinator.destroyPersistentStore(at: storeURL,
+                                                            ofType: storeType.getStorageType(),
+                                                            options: nil)
+                try FileManager.default.removeItem(at: storeURL)
+                
+                let writeAheadLog = storeURL.path + "-wal"
+                try FileManager.default.removeItem(atPath: writeAheadLog)
+                
+                let sharedMemoryfile = storeURL.path + "-shm"
+                try FileManager.default.removeItem(atPath: sharedMemoryfile)
+                completionBlock?(true)
+                
+            } catch {
+                completionBlock?(false)
+            }
         }
     }
 }

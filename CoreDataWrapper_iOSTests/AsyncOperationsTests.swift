@@ -24,8 +24,21 @@ import XCTest
 
 class AsyncOperationsTests: XCTestCase {
     
+    private var coreDataWrapper: CoreDataWrapper!
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
+        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                    databaseFileName: "CoreDataWrapper",
+                                                    bundle: Bundle(for: AsyncOperationsTests.self),
+                                                    storeType: .inMemory)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        self.coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
     }
     
     override func tearDown() {
@@ -33,22 +46,16 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testInitializationAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
     }
     
     func testAddObjAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.addAsyncOf(type: Car.self) { (car) in
+        self.coreDataWrapper.addAsyncOf(type: Car.self) { (car) in
             XCTAssertNotNil(car)
             expectation.fulfill()
         }
@@ -56,14 +63,11 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testAddObjWidPropsAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.addAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false, completion: { (car) in
+        self.coreDataWrapper.addAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false, completion: { (car) in
             
             XCTAssertNotNil(car)
             
@@ -77,45 +81,39 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchObjAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.fetchAsyncBy(type: Car.self,
-                                     objectId: car!.objectID,
-                                     context: nil, completion: { (car) in
-                                        XCTAssertNotNil(car)
-                                        XCTAssertEqual(car!.model, "Audi")
-                                        XCTAssertEqual(car!.regNo, 30)
-                                        expectation.fulfill()
-                                        
+        self.coreDataWrapper.fetchAsyncBy(type: Car.self,
+                                          objectId: car!.objectID,
+                                          context: nil, completion: { (car) in
+                                            XCTAssertNotNil(car)
+                                            XCTAssertEqual(car!.model, "Audi")
+                                            XCTAssertEqual(car!.regNo, 30)
+                                            expectation.fulfill()
+                                            
         }, completionOnMainThread: false)
         wait(for: [expectation], timeout: 1.0)
     }
     
     func testDeleteObjAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, shouldSave: true, completion: { (isDeleted) in
+        self.coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, shouldSave: true, completion: { (isDeleted) in
             
             XCTAssert(isDeleted)
             
-            let fetched = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
+            let fetched = self.coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssertNil(fetched)
             expectation.fulfill()
         }, completionOnMainThread: false)
@@ -124,23 +122,20 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchAllAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: false)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.fetchAllAsyncOf(type: Car.self, sortBy: ["model" : true], completion: { (fetched) in
+        self.coreDataWrapper.fetchAllAsyncOf(type: Car.self, sortBy: ["model" : true], completion: { (fetched) in
             XCTAssertEqual(fetched?.count, 3)
             expectation.fulfill()
         }, completionOnMainThread: false)
@@ -149,28 +144,25 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testDeleteAllAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: false)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        coreDataWrapper.deleteAllAsyncOf(type: Car.self, shouldSave: false, completion: { (isDeleted) in
+        self.coreDataWrapper.deleteAllAsyncOf(type: Car.self, shouldSave: false, completion: { (isDeleted) in
             
             XCTAssert(isDeleted)
             
-            let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
+            let fetched = self.coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 0)
             expectation.fulfill()
             
@@ -180,18 +172,15 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testUpdateObjAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
+        self.coreDataWrapper.updateAsyncBy(objectId: car!.objectID, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
             
             XCTAssert(isUpdated)
             
@@ -206,28 +195,25 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testUpdateAllAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: false)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: false)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
+        self.coreDataWrapper.updateAllAsyncOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
             
             XCTAssert(updated)
             
-            let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
+            let fetched = self.coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
             
             let filtered = fetched!.filter { (car) -> Bool in
@@ -241,23 +227,20 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testCountAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: false)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: false)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.countAsyncOf(type: Car.self, predicate: nil, completion: { (count) in
+        self.coreDataWrapper.countAsyncOf(type: Car.self, predicate: nil, completion: { (count) in
             XCTAssertEqual(count, 3)
             expectation.fulfill()
             
@@ -266,23 +249,20 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchPropertiesAsync() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.fetchPropertiesAsyncOf(type: Car.self, propertiesToFetch: ["model", "regNo"], completion: { (properties) in
+        self.coreDataWrapper.fetchPropertiesAsyncOf(type: Car.self, propertiesToFetch: ["model", "regNo"], completion: { (properties) in
             XCTAssertNotNil(properties)
             XCTAssertEqual(properties?.count, 3)
             expectation.fulfill()
@@ -297,6 +277,14 @@ class AsyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: AsyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
@@ -325,6 +313,14 @@ class AsyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: AsyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
@@ -362,6 +358,14 @@ class AsyncOperationsTests: XCTestCase {
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
         
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
+        
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
@@ -398,7 +402,15 @@ class AsyncOperationsTests: XCTestCase {
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
+        
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
         let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
@@ -431,6 +443,14 @@ class AsyncOperationsTests: XCTestCase {
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
         
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
+        
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
@@ -452,20 +472,17 @@ class AsyncOperationsTests: XCTestCase {
         }, completionOnMainThread: false)
         wait(for: [expectation], timeout: 1.0)
         
-        coreDataWrapper.purgeStore()
+       coreDataWrapper.purgeStore()
     }
     
     // MARK: - BG Context Test cases
     func testAddObjAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.addAsyncOf(type: Car.self, context: context) { (car) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.addAsyncOf(type: Car.self, context: context) { (car) in
             XCTAssertNotNil(car)
             expectation.fulfill()
         }
@@ -473,15 +490,12 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testAddObjWidPropsAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let context = coreDataWrapper.newBgContext()
+        let context = self.coreDataWrapper.newBgContext()
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.addAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: false, completion: { (car) in
+        self.coreDataWrapper.addAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: false, completion: { (car) in
             
             XCTAssertNotNil(car)
             
@@ -495,15 +509,12 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testAddObjWidPropsAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let context = coreDataWrapper.newBgContext()
+        let context = self.coreDataWrapper.newBgContext()
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.addAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: false, completion: { (car) in
+        self.coreDataWrapper.addAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: false, completion: { (car) in
             
             XCTAssertNotNil(car)
             
@@ -518,17 +529,14 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchObjAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.fetchAsyncBy(type: Car.self, objectId: car!.objectID, context: context, completion: { (car) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.fetchAsyncBy(type: Car.self, objectId: car!.objectID, context: context, completion: { (car) in
             XCTAssertNotNil(car)
             XCTAssertEqual(car!.model, "Audi")
             XCTAssertEqual(car!.regNo, 30)
@@ -539,18 +547,15 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchObjAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.fetchAsyncBy(type: Car.self, objectId: car!.objectID, context: context, completion: { (car) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.fetchAsyncBy(type: Car.self, objectId: car!.objectID, context: context, completion: { (car) in
             XCTAssertNotNil(car)
             XCTAssertEqual(car!.model, "Audi")
             XCTAssertEqual(car!.regNo, 30)
@@ -563,23 +568,20 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testDeleteObjAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
+        let context = self.coreDataWrapper.newBgContext()
         
-        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: context, shouldSave: true, completion: { (isDeleted) in
-                       
+        self.coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: context, shouldSave: true, completion: { (isDeleted) in
+            
             XCTAssert(isDeleted)
-                       
-            let fetched = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
+            
+            let fetched = self.coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssert(fetched!.isDeleted)
             
             expectation.fulfill()
@@ -590,22 +592,19 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testDeleteObjAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: context, shouldSave: true, completion: {  (isDeleted) in
-                   
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: context, shouldSave: true, completion: {  (isDeleted) in
+            
             XCTAssert(isDeleted)
-                   
-            let fetched = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
+            
+            let fetched = self.coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssert(fetched!.isDeleted)
             XCTAssert(Thread.isMainThread)
             
@@ -616,24 +615,21 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchAllAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.fetchAllAsyncOf(type: Car.self, context: context, sortBy: ["model" : true], completion: { (fetched) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.fetchAllAsyncOf(type: Car.self, context: context, sortBy: ["model" : true], completion: { (fetched) in
             XCTAssertEqual(fetched?.count, 3)
             
             expectation.fulfill()
@@ -643,24 +639,21 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchAllAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.fetchAllAsyncOf(type: Car.self, context: context, sortBy: ["model" : true], completion: { (fetched) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.fetchAllAsyncOf(type: Car.self, context: context, sortBy: ["model" : true], completion: { (fetched) in
             XCTAssertEqual(fetched?.count, 3)
             XCTAssert(Thread.isMainThread)
             
@@ -671,28 +664,25 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testDeleteAllAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: { (isDeleted) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: { (isDeleted) in
             
             XCTAssert(isDeleted)
             
-            let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
+            let fetched = self.coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 0)
             expectation.fulfill()
             
@@ -701,28 +691,25 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testDeleteAllAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 30], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: { (isDeleted) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.deleteAllAsyncOf(type: Car.self, context: context, shouldSave: true, completion: { (isDeleted) in
             
             XCTAssert(isDeleted)
             
-            let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
+            let fetched = self.coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 0)
             XCTAssert(Thread.isMainThread)
             
@@ -732,22 +719,19 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testUpdateObjAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
-        
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
+            
             XCTAssert(isUpdated)
             
-            let car = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
+            let car = self.coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssertEqual(car!.model, "dp1")
             XCTAssertEqual(car!.regNo, 40)
             
@@ -759,22 +743,19 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testUpdateObjAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
-        
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, completion: { (isUpdated) in
+            
             XCTAssert(isUpdated)
             
-            let car = coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
+            let car = self.coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
             XCTAssertEqual(car?.model, "dp1")
             XCTAssertEqual(car?.regNo, 40)
             XCTAssert(Thread.isMainThread)
@@ -786,19 +767,16 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testUpdateObjAsyncWidBGContextMainThreadSave() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: false, completion: { (isUpdated) in
-        
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: false, completion: { (isUpdated) in
+            
             XCTAssert(isUpdated)
             
             XCTAssert(Thread.isMainThread)
@@ -810,28 +788,25 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testUpdateAllAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
             
             XCTAssert(updated)
             
-            let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
+            let fetched = self.coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
             
             let filtered = fetched!.filter { (car) -> Bool in
@@ -845,28 +820,25 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testUpdateAllAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, completion: { (updated) in
             
             XCTAssert(updated)
             
-            let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
+            let fetched = self.coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
             XCTAssertEqual(fetched?.count, 3)
             
             let filtered = fetched!.filter { (car) -> Bool in
@@ -882,24 +854,21 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testCountAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.countAsyncOf(type: Car.self, context: context, predicate: nil, completion: { (count) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.countAsyncOf(type: Car.self, context: context, predicate: nil, completion: { (count) in
             XCTAssertEqual(count, 3)
             expectation.fulfill()
             
@@ -908,24 +877,21 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testCountAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.countAsyncOf(type: Car.self, context: context, predicate: nil, completion: { (count) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.countAsyncOf(type: Car.self, context: context, predicate: nil, completion: { (count) in
             XCTAssertEqual(count, 3)
             XCTAssert(Thread.isMainThread)
             
@@ -935,24 +901,21 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchPropertiesAsyncWidBGContext() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.fetchPropertiesAsyncOf(type: Car.self, context: context, propertiesToFetch: ["model", "regNo"], completion: { (properties) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.fetchPropertiesAsyncOf(type: Car.self, context: context, propertiesToFetch: ["model", "regNo"], completion: { (properties) in
             XCTAssertNotNil(properties)
             XCTAssertEqual(properties?.count, 3)
             expectation.fulfill()
@@ -962,24 +925,21 @@ class AsyncOperationsTests: XCTestCase {
     }
     
     func testFetchPropertiesAsyncWidBGContextMainThread() {
-        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                   databaseFileName: "CoreDataWrapper",
-                                                   bundle: Bundle(for: AsyncOperationsTests.self),
-                                                   storeType: .inMemory)
+        
         XCTAssertNotNil(coreDataWrapper)
         
-        let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
+        let car1 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
         
-        let car2 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
+        let car2 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp2", "regNo": 20], shouldSave: false)
         XCTAssertNotNil(car2)
         
-        let car3 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
+        let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = coreDataWrapper.newBgContext()
-        coreDataWrapper.fetchPropertiesAsyncOf(type: Car.self, context: context, propertiesToFetch: ["model", "regNo"], completion: { (properties) in
+        let context = self.coreDataWrapper.newBgContext()
+        self.coreDataWrapper.fetchPropertiesAsyncOf(type: Car.self, context: context, propertiesToFetch: ["model", "regNo"], completion: { (properties) in
             XCTAssertNotNil(properties)
             XCTAssertEqual(properties?.count, 3)
             XCTAssert(Thread.isMainThread)
@@ -995,6 +955,14 @@ class AsyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: AsyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
@@ -1024,6 +992,14 @@ class AsyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: AsyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
@@ -1055,6 +1031,14 @@ class AsyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: AsyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)
@@ -1092,6 +1076,14 @@ class AsyncOperationsTests: XCTestCase {
                                                    bundle: Bundle(for: AsyncOperationsTests.self),
                                                    storeType: .sqlite)
         XCTAssertNotNil(coreDataWrapper)
+        
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
         
         let car1 = coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp1", "regNo": 10], shouldSave: false)
         XCTAssertNotNil(car1)

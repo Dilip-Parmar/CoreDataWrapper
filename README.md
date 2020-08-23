@@ -95,6 +95,9 @@ https://github.com/Dilip-Parmar/CoreDataWrapper
 ```ruby
 let bundle = Bundle(identifier: "com.myBundleId")
 let coreDataWrapper = CoreDataWrapper.init(modelFileName: "Model", bundle: bundle, storeType: StoreType.sqlite)
+coreDataWrapper.loadStore(completionBlock: { (isSuccess, error) in
+
+})
 ```
 
 ## Main context synchronous operations

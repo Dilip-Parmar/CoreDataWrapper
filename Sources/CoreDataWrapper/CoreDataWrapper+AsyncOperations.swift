@@ -42,7 +42,6 @@ extension CoreDataWrapper {
                 return
             }
             let entity = NSManagedObject.init(entity: entityDesc, insertInto: innerContext) as? M
-            try? innerContext.obtainPermanentIDs(for: Array(innerContext.insertedObjects))
             completion(entity)
         }
         innerContext.perform {
@@ -72,7 +71,6 @@ extension CoreDataWrapper {
                 return
             }
             let entity = NSManagedObject.init(entity: entityDesc, insertInto: innerContext) as? M
-            try? innerContext.obtainPermanentIDs(for: Array(innerContext.insertedObjects))
             for (key, value) in properties {
                 entity?.setValue(value, forKey: key)
             }

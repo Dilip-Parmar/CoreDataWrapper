@@ -43,7 +43,6 @@ extension CoreDataWrapper {
                                                                 return
             }
             entity = NSManagedObject.init(entity: entityDesc, insertInto: self.mainContext) as? M
-            try? self.mainContext.obtainPermanentIDs(for: Array(self.mainContext.insertedObjects))
         }
         return entity
     }
@@ -59,7 +58,6 @@ extension CoreDataWrapper {
                                                                 return
             }
             entity = NSManagedObject.init(entity: entityDesc, insertInto: self.mainContext) as? M
-            try? self.mainContext.obtainPermanentIDs(for: Array(self.mainContext.insertedObjects))
             for (key, value) in properties {
                 entity?.setValue(value, forKey: key)
             }

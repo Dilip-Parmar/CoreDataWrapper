@@ -77,12 +77,12 @@ extension CoreDataWrapper {
                 entity?.setValue(value, forKey: key)
             }
             let saveMain = { (completion: @escaping () -> Void) in
-                self.saveMainContext(isSync: false, completion: { (Bool) in
+                self.saveMainContext(isSync: false, completion: { (bool) in
                     completion()
                 })
             }
             let saveBG = { (completion: @escaping () -> Void) in
-                self.saveBGContext(context: innerContext, isSync: true, completion: { (Bool) in
+                self.saveBGContext(context: innerContext, isSync: true, completion: { (bool) in
                     completion()
                 })
             }

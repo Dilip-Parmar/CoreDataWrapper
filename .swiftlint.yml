@@ -4,3 +4,7 @@ disabled_rules:
 excluded:
 - temp_dir
 - tmp
+- CoreDataWrapper_iOSTests
+- CoreDataWrapper
+- Tests
+- Package.swift

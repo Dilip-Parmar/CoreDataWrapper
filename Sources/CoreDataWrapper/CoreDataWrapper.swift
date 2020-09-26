@@ -106,10 +106,12 @@ final public class CoreDataWrapper {
     // MARK: Set configuration to context
     @available(iOS 12.0, macOS 10.13, *)
     private func setConfigTo(context: NSManagedObjectContext) {
-        context.mergePolicy = self.mergePolicy
-        context.automaticallyMergesChangesFromParent = true
-        context.shouldDeleteInaccessibleFaults = true
-        context.retainsRegisteredObjects = false
+        if context.hasChanges == false {
+            context.mergePolicy = self.mergePolicy
+            context.automaticallyMergesChangesFromParent = true
+            context.shouldDeleteInaccessibleFaults = true
+            context.retainsRegisteredObjects = false
+        }
     }
     
     // MARK: Persistent store coordinator
@@ -155,6 +157,13 @@ final public class CoreDataWrapper {
             }
         case .inMemory:
             break
+        }
+        do {
+            var resourceValues: URLResourceValues = URLResourceValues.init()
+            resourceValues.isExcludedFromBackup = true
+            try storeDescription.url?.setResourceValues(resourceValues)
+        } catch let error {
+            print("could not exlcude core data file from backup")
         }
         storeDescription.type = storeType.getStorageType()
         storeDescription.shouldMigrateStoreAutomatically = true

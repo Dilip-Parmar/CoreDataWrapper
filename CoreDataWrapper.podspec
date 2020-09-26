@@ -1,7 +1,7 @@
 Pod::Spec.new do |spec|
 
   spec.name         = "CoreDataWrapper"
-  spec.version      = "1.0.0"
+  spec.version      = "3.0.1"
   spec.summary      = "A simple library with core data stack and helper functions (Core Data Wrapper)"
 
   spec.description  = <<-DESC

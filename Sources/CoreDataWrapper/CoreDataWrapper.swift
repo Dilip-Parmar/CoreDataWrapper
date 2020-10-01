@@ -191,8 +191,9 @@ final public class CoreDataWrapper {
         let saveChangesBlock = {
             if self.mainContext.hasChanges {
                 do {
-                    print("Total objects to be saved - \(self.mainContext.insertedObjects.count)")
+                    let count = self.mainContext.insertedObjects.count + self.mainContext.updatedObjects.count + self.mainContext.deletedObjects.count
                     try self.mainContext.obtainPermanentIDs(for: Array(self.mainContext.insertedObjects))
+                    print("Total objects to be saved - \(count)")
                     try self.mainContext.save()
                 } catch let error {
                     debugPrint("Error in \(#file) \(#function) \(#line) -- Error = \(error)")
@@ -217,7 +218,8 @@ final public class CoreDataWrapper {
         let saveChangesBlock = {
             if context.hasChanges {
                 do {
-                    print("Total objects to be saved - \(context.insertedObjects.count)")
+                    let count = context.insertedObjects.count + context.updatedObjects.count + context.deletedObjects.count
+                    print("Total objects to be saved - \(count)")
                     try context.obtainPermanentIDs(for: Array(context.insertedObjects))
                     try context.save()
                 } catch let error {

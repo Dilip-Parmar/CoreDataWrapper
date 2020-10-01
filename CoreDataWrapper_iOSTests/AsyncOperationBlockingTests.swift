@@ -21,38 +21,40 @@
 //SOFTWARE.
 @testable import CoreDataWrapper_iOS
 import XCTest
+import CoreData
 
 class AsyncOperationBlockingTests: XCTestCase {
     
+    private var shouldInitializeCoreData: Bool = true
     private var coreDataWrapper: CoreDataWrapper!
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
-                                                    databaseFileName: "CoreDataWrapper",
-                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
-                                                    storeType: .inMemory)
-        
-        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        self.coreDataWrapper.loadStore { (isSuccess, error) in
-            XCTAssert(isSuccess)
-            XCTAssertNil(error)
-            loadExpectation.fulfill()
+        if shouldInitializeCoreData == true {
+            self.coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                        databaseFileName: "CoreDataWrapper",
+                                                        bundle: Bundle(for: AsyncOperationBlockingTests.self),
+                                                        storeType: .inMemory)
+            
+            let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+            self.coreDataWrapper.loadStore { (isSuccess, error) in
+                XCTAssert(isSuccess)
+                XCTAssertNil(error)
+                loadExpectation.fulfill()
+            }
+            wait(for: [loadExpectation], timeout: 5.0)
         }
-        wait(for: [loadExpectation], timeout: 5.0)
-        self.coreDataWrapper.deleteAllOf(type: Car.self, shouldSave: true)
     }
     
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
+        self.coreDataWrapper.purgeStore()
     }
     
     func testInitializationAsyncBlocking() {
-        
         XCTAssertNotNil(coreDataWrapper)
     }
     
     func testAddObjAsyncBlocking() {
-        
         XCTAssertNotNil(coreDataWrapper)
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         self.coreDataWrapper.addAsyncOf(type: Car.self, context: self.coreDataWrapper!.bgContext, isBlocking: true) { (car) in
@@ -109,16 +111,35 @@ class AsyncOperationBlockingTests: XCTestCase {
         let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
+        func managedObjectContextObjectsDidChange(notification: Notification) -> Bool {
+            guard let userInfo = notification.userInfo else { return false }
+
+            if let inserts = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject>, inserts.count > 0 {
+                return false
+            }
+            if let updates = userInfo[NSUpdatedObjectsKey] as? Set<NSManagedObject>, updates.count > 0 {
+                return false
+            }
+            if let deletes = userInfo[NSDeletedObjectsKey] as? Set<NSManagedObject>, deletes.count > 0 {
+                if let deleted = deletes.first as? Car {
+                    XCTAssertEqual(deleted.model, "Audi")
+                    XCTAssertEqual(deleted.regNo, 30)
+                    return true
+                }
+                return false
+            }
+            return false
+        }
+        let notificationExpectation = expectation(forNotification: NSNotification.Name.NSManagedObjectContextObjectsDidChange,
+                                                         object: self.coreDataWrapper.bgContext,
+                                                         handler: managedObjectContextObjectsDidChange)
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         self.coreDataWrapper.deleteAsyncBy(objectId: car!.objectID, context: self.coreDataWrapper.bgContext, shouldSave: true, isBlocking: true, completion: { (isDeleted) in
             XCTAssert(isDeleted)
             expectation.fulfill()
         }, completionOnMainThread: false)
+        wait(for: [notificationExpectation], timeout: 1.0)
         wait(for: [expectation], timeout: 5.0)
-        
-        let fetched = self.coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
-        XCTAssertNil(fetched?.model)
-        XCTAssertNil(fetched?.regNo)
     }
     
     func testFetchAllAsyncBlocking() {
@@ -172,26 +193,37 @@ class AsyncOperationBlockingTests: XCTestCase {
     }
     
     func testUpdateObjAsyncBlocking() {
-        
+        self.shouldInitializeCoreData = false
+        let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
+                                                   databaseFileName: "CoreDataWrapper",
+                                                   bundle: Bundle(for: AsyncOperationBlockingTests.self),
+                                                   storeType: .inMemory)
         XCTAssertNotNil(coreDataWrapper)
         
-        let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
+        let loadExpectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        coreDataWrapper.loadStore { (isSuccess, error) in
+            XCTAssert(isSuccess)
+            XCTAssertNil(error)
+            loadExpectation.fulfill()
+        }
+        wait(for: [loadExpectation], timeout: 5.0)
+        
+        let car = coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        self.coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: self.coreDataWrapper!.bgContext, properties: ["model": "dp1", "regNo": 40], shouldSave: true, isBlocking: true, completion: { (isUpdated) in
+        coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: coreDataWrapper.bgContext, properties: ["model": "dp1", "regNo": 40], shouldSave: true, isBlocking: true, completion: { (isUpdated) in
             
             XCTAssert(isUpdated)
-            
-            XCTAssertEqual(car?.model, "dp1")
-            XCTAssertEqual(car?.regNo, 40)
-            
             expectation.fulfill()
             
         }, completionOnMainThread: false)
         
         wait(for: [expectation], timeout: 1.0)
+        
+        
+        coreDataWrapper.purgeStore()
     }
     
     func testUpdateAllAsyncBlocking() {
@@ -209,8 +241,7 @@ class AsyncOperationBlockingTests: XCTestCase {
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         
-        self.coreDataWrapper.updateAllAsyncOf(type: Car.self, context: self.coreDataWrapper!.bgContext, properties: ["model": "Audi", "regNo": 30], shouldSave: true, isBlocking: true, completion: { (updated) in
-            
+        self.coreDataWrapper.updateAllAsyncOf(type: Car.self, context: self.coreDataWrapper!.newBgContext(), properties: ["model": "Audi", "regNo": 30], shouldSave: true, isBlocking: false, completion: { (updated) in
             XCTAssert(updated)
             expectation.fulfill()
         }, completionOnMainThread: false)
@@ -272,6 +303,7 @@ class AsyncOperationBlockingTests: XCTestCase {
     }
     
     func testPerformOperationAsyncBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
@@ -308,6 +340,7 @@ class AsyncOperationBlockingTests: XCTestCase {
     }
     
     func testUpdateAllSqliteAsyncBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
@@ -352,6 +385,7 @@ class AsyncOperationBlockingTests: XCTestCase {
     }
     
     func testUpdateAllSqliteAsyncMainThreadBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
@@ -376,26 +410,27 @@ class AsyncOperationBlockingTests: XCTestCase {
         XCTAssertNotNil(car3)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: coreDataWrapper.bgContext, properties: ["model": "Audi", "regNo": 30], shouldSave: false, isBlocking: true, completion: { (updated) in
+        coreDataWrapper.updateAllAsyncOf(type: Car.self, context: coreDataWrapper.bgContext, properties: ["model": "Audi", "regNo": 30], shouldSave: true, isBlocking: true, completion: { (updated) in
             
             XCTAssert(updated)
-            
-            let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
-            XCTAssertEqual(fetched?.count, 3)
-            
-            let filtered = fetched!.filter { (car) -> Bool in
-                car.model == "Audi" && car.regNo == 30
-            }
-            XCTAssertEqual(filtered.count, 3)
             expectation.fulfill()
             
         }, completionOnMainThread: true)
         wait(for: [expectation], timeout: 1.0)
+
+        let fetched = coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
+        XCTAssertEqual(fetched?.count, 3)
+        
+        let filtered = fetched!.filter { (car) -> Bool in
+            car.model == "Audi" && car.regNo == 30
+        }
+        XCTAssertEqual(filtered.count, 3)
         
         coreDataWrapper.purgeStore()
     }
     
     func testUpdateAllSqliteAsyncMainThreadBGContextBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
@@ -437,6 +472,7 @@ class AsyncOperationBlockingTests: XCTestCase {
     
     
     func testDeleteAllSqliteAsyncBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
@@ -724,19 +760,40 @@ class AsyncOperationBlockingTests: XCTestCase {
         
         let car = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "Audi", "regNo": 30], shouldSave: true)
         XCTAssertNotNil(car)
+        XCTAssertEqual(car!.regNo, 30)
+        XCTAssertEqual(car!.model, "Audi")
+        
+        func managedObjectContextObjectsDidChange(notification: Notification) -> Bool {
+            guard let userInfo = notification.userInfo else { return false }
+            
+            if let inserts = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject>, inserts.count > 0 {
+                return false
+            }
+            if let updates = userInfo[NSUpdatedObjectsKey] as? Set<NSManagedObject>, updates.count > 0 {
+                if let carFound = updates.first as? Car {
+                    XCTAssertEqual(carFound.model, "dp1")
+                    XCTAssertEqual(carFound.regNo, 40)
+                    return true
+                }
+                return false
+            }
+            if let deletes = userInfo[NSDeletedObjectsKey] as? Set<NSManagedObject>, deletes.count > 0 {
+                return false
+            }
+            return false
+        }
+        let context = self.coreDataWrapper.newBgContext()
+        let notificationExpectation = expectation(forNotification: NSNotification.Name.NSManagedObjectContextObjectsDidChange,
+                                                  object: context,
+                                                  handler: managedObjectContextObjectsDidChange)
         
         let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
-        let context = self.coreDataWrapper.newBgContext()
         self.coreDataWrapper.updateAsyncBy(objectId: car!.objectID, context: context, properties: ["model": "dp1", "regNo": 40], shouldSave: true, isBlocking: true, completion: { (isUpdated) in
             XCTAssert(isUpdated)
             expectation.fulfill()
-            
         }, completionOnMainThread: false)
+        wait(for: [notificationExpectation], timeout: 1.0)
         wait(for: [expectation], timeout: 1.0)
-        
-        let carFound = self.coreDataWrapper.fetchBy(objectId: car!.objectID) as? Car
-        XCTAssertEqual(carFound!.model, "dp1")
-        XCTAssertEqual(carFound!.regNo, 40)
     }
     
     func testUpdateObjAsyncWidBGContextMainThreadBlocking() {
@@ -797,21 +854,33 @@ class AsyncOperationBlockingTests: XCTestCase {
         let car3 = self.coreDataWrapper.addOf(type: Car.self, properties: ["model": "dp3", "regNo": 40], shouldSave: true)
         XCTAssertNotNil(car3)
         
-        let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
+        func managedObjectContextObjectsDidChange(notification: Notification) -> Bool {
+            guard let userInfo = notification.userInfo else { return false }
+            
+            if let inserts = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject>, inserts.count > 0 {
+                return false
+            }
+            if let updates = userInfo[NSUpdatedObjectsKey] as? Set<NSManagedObject>, updates.count > 0 {
+                XCTAssertEqual(updates.count, 3)
+                return true
+            }
+            if let deletes = userInfo[NSDeletedObjectsKey] as? Set<NSManagedObject>, deletes.count > 0 {
+                return false
+            }
+            return false
+        }
         let context = self.coreDataWrapper.newBgContext()
+        let notificationExpectation = expectation(forNotification: NSNotification.Name.NSManagedObjectContextObjectsDidChange,
+                                                  object: context,
+                                                  handler: managedObjectContextObjectsDidChange)
+        
+        let expectation = XCTestExpectation.init(description: "\(#file)\(#line)")
         self.coreDataWrapper.updateAllAsyncOf(type: Car.self, context: context, properties: ["model": "Audi", "regNo": 30], shouldSave: true, isBlocking: true, completion: { (updated) in
             XCTAssert(updated)
             expectation.fulfill()
         }, completionOnMainThread: false)
+        wait(for: [notificationExpectation], timeout: 1.0)
         wait(for: [expectation], timeout: 1.0)
-        
-        let fetched = self.coreDataWrapper.fetchAllOf(type: Car.self, sortBy: ["model" : true])
-        XCTAssertEqual(fetched?.count, 3)
-        
-        let filtered = fetched!.filter { (car) -> Bool in
-            car.model == "Audi" && car.regNo == 30
-        }
-        XCTAssertEqual(filtered.count, 3)
     }
     
     func testUpdateAllAsyncWidBGContextMainThreadBlocking() {
@@ -945,6 +1014,7 @@ class AsyncOperationBlockingTests: XCTestCase {
     }
     
     func testPerformOperationAsyncWidBGContextBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
@@ -982,6 +1052,7 @@ class AsyncOperationBlockingTests: XCTestCase {
     }
     
     func testPerformOperationAsyncWidBGContextMainThreadBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
@@ -1021,6 +1092,7 @@ class AsyncOperationBlockingTests: XCTestCase {
     }
     
     func testUpdateAllSqliteAsyncWidBGContextBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),
@@ -1066,6 +1138,7 @@ class AsyncOperationBlockingTests: XCTestCase {
     }
     
     func testDeleteAllSqliteAsyncWidBGContextBlocking() {
+        self.shouldInitializeCoreData = false
         let coreDataWrapper = CoreDataWrapper.init(modelFileName: "CoreDataWrapper",
                                                    databaseFileName: "CoreDataWrapper",
                                                    bundle: Bundle(for: AsyncOperationBlockingTests.self),

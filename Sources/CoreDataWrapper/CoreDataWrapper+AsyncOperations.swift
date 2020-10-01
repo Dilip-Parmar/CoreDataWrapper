@@ -28,14 +28,18 @@ extension CoreDataWrapper {
     final public func addAsyncOf<M: NSManagedObject>
         (type: M.Type,
          context: NSManagedObjectContext? = nil,
+         isBlocking: Bool = false,
          completion: @escaping (M?) -> Void) {
         var innerContext: NSManagedObjectContext
         if let context = context {
             innerContext = context
         } else {
             innerContext = self.mainContext
+            if isBlocking {
+                assertionFailure("Please use Sync operation if want blocking operation on main context")
+            }
         }
-        let addBlock = {
+        let operationBlock = {
             let entityName = String(describing: type)
             guard let entityDesc = NSEntityDescription.entity(forEntityName: entityName, in: innerContext) else {
                 completion(nil)
@@ -44,8 +48,11 @@ extension CoreDataWrapper {
             let entity = NSManagedObject.init(entity: entityDesc, insertInto: innerContext) as? M
             completion(entity)
         }
-        innerContext.perform {
-            addBlock()
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
         }
     }
     // MARK: - Add with properties
@@ -55,6 +62,7 @@ extension CoreDataWrapper {
          context: NSManagedObjectContext? = nil,
          properties: [String: Any],
          shouldSave: Bool,
+         isBlocking: Bool = false,
          completion: @escaping (M?) -> Void,
          completionOnMainThread: Bool) {
         
@@ -63,8 +71,11 @@ extension CoreDataWrapper {
             innerContext = context
         } else {
             innerContext = self.mainContext
+            if isBlocking {
+                assertionFailure("Please use Sync operation if want blocking operation on main context")
+            }
         }
-        let addBlock = {
+        let operationBlock = {
             let entityName = String(describing: type)
             guard let entityDesc = NSEntityDescription.entity(forEntityName: entityName, in: innerContext) else {
                 completion(nil)
@@ -133,8 +144,11 @@ extension CoreDataWrapper {
                 })
             }
         }
-        innerContext.perform {
-            addBlock()
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
         }
     }
     
@@ -143,6 +157,7 @@ extension CoreDataWrapper {
         (type: M.Type,
          objectId: NSManagedObjectID,
          context: NSManagedObjectContext? = nil,
+         isBlocking: Bool = false,
          completion: @escaping (M?) -> Void,
          completionOnMainThread: Bool) {
         var innerContext: NSManagedObjectContext
@@ -150,8 +165,11 @@ extension CoreDataWrapper {
             innerContext = context
         } else {
             innerContext = self.mainContext
+            if isBlocking {
+                assertionFailure("Please use Sync operation if want blocking operation on main context")
+            }
         }
-        innerContext.perform {
+        let operationBlock = {
             let fetched = try? innerContext.existingObject(with: objectId) as? M
             
             let mainCaller = {
@@ -178,6 +196,12 @@ extension CoreDataWrapper {
                 mainCaller()
             }
         }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
     }
     // MARK: - Fetch all
     final public func fetchAllAsyncOf<M: NSManagedObject>
@@ -185,6 +209,7 @@ extension CoreDataWrapper {
          context: NSManagedObjectContext? = nil,
          predicate: NSPredicate? = nil,
          sortBy: [String: Bool]?,
+         isBlocking: Bool = false,
          completion: @escaping ([M]?) -> Void,
          completionOnMainThread: Bool) {
         
@@ -193,6 +218,9 @@ extension CoreDataWrapper {
             innerContext = context
         } else {
             innerContext = self.mainContext
+            if isBlocking {
+                assertionFailure("Please use Sync operation if want blocking operation on main context")
+            }
         }
         let sortByBlock = { () -> [NSSortDescriptor] in
             var sortDescriptors = [NSSortDescriptor]()
@@ -204,7 +232,7 @@ extension CoreDataWrapper {
             }
             return sortDescriptors
         }
-        innerContext.perform {
+        let operationBlock = {
             let request = NSFetchRequest<M>.init(entityName: String(describing: type))
             request.predicate = predicate
             request.sortDescriptors = sortByBlock()
@@ -241,6 +269,12 @@ extension CoreDataWrapper {
                 mainCaller()
             }
         }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
     }
     // MARK: - Fetch Properties
     final public func fetchPropertiesAsyncOf<M: NSManagedObject>
@@ -250,6 +284,7 @@ extension CoreDataWrapper {
          predicate: NSPredicate? = nil,
          sortBy: [String: Bool]? = nil,
          needDistinctResults: Bool = false,
+         isBlocking: Bool = false,
          completion: @escaping ([[String: AnyObject]]?) -> Void,
          completionOnMainThread: Bool) {
         
@@ -258,6 +293,9 @@ extension CoreDataWrapper {
             innerContext = context
         } else {
             innerContext = self.mainContext
+            if isBlocking {
+                assertionFailure("Please use Sync operation if want blocking operation on main context")
+            }
         }
         let sortByBlock = { () -> [NSSortDescriptor] in
             var sortDescriptors = [NSSortDescriptor]()
@@ -269,7 +307,7 @@ extension CoreDataWrapper {
             }
             return sortDescriptors
         }
-        innerContext.perform {
+        let operationBlock = {
             var properties: [[String: AnyObject]]?
             let request = NSFetchRequest<NSFetchRequestResult>.init(entityName: String(describing: type))
             request.propertiesToFetch = propertiesToFetch
@@ -300,12 +338,19 @@ extension CoreDataWrapper {
                 mainCaller()
             }
         }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
     }
     // MARK: - Delete
     final public func deleteAsyncBy
         (objectId: NSManagedObjectID,
          context: NSManagedObjectContext? = nil,
          shouldSave: Bool,
+         isBlocking: Bool = false,
          completion: @escaping (Bool) -> Void,
          completionOnMainThread: Bool) {
         var innerContext: NSManagedObjectContext
@@ -313,8 +358,11 @@ extension CoreDataWrapper {
             innerContext = context
         } else {
             innerContext = self.mainContext
+            if isBlocking {
+                assertionFailure("Please use Sync operation if want blocking operation on main context")
+            }
         }
-        innerContext.perform {
+        let operationBlock = {
             var isDeleted = false
             if let existingObject = try? innerContext.existingObject(with: objectId),
                 !existingObject.isDeleted {
@@ -367,6 +415,12 @@ extension CoreDataWrapper {
                 })
             }
         }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
     }
     // MARK: - Delete all
     final public func deleteAllAsyncOf<M: NSManagedObject>
@@ -374,10 +428,14 @@ extension CoreDataWrapper {
          context: NSManagedObjectContext? = nil,
          predicate: NSPredicate? = nil,
          shouldSave: Bool,
+         isBlocking: Bool = false,
          completion: @escaping (Bool) -> Void,
          completionOnMainThread: Bool) {
         
         let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
+        if isBlocking && context == nil {
+            assertionFailure("Please use Sync operation if want blocking operation on main context")
+        }
         let deleteAllObjectBlock = { () -> Bool in
             var result = false
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>.init(entityName: String(describing: type))
@@ -426,7 +484,7 @@ extension CoreDataWrapper {
             }
             return result
         }
-        innerContext.perform {
+        let operationBlock = {
             let isDeleted = deleteAllObjectBlock()
             
             let saveMain = { (completion: @escaping (Bool) -> Void) in
@@ -493,6 +551,12 @@ extension CoreDataWrapper {
                 })
             }
         }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
     }
     // MARK: - Update
     final public func updateAsyncBy
@@ -500,10 +564,14 @@ extension CoreDataWrapper {
          context: NSManagedObjectContext? = nil,
          properties: [String: Any],
          shouldSave: Bool,
+         isBlocking: Bool = false,
          completion: @escaping (Bool) -> Void,
          completionOnMainThread: Bool) {
         let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
-        innerContext.perform {
+        if isBlocking && context == nil {
+            assertionFailure("Please use Sync operation if want blocking operation on main context")
+        }
+        let operationBlock = {
             var isUpdated = false
             if let fetched = try? innerContext.existingObject(with: objectId) {
                 for (key, value) in properties {
@@ -563,6 +631,12 @@ extension CoreDataWrapper {
                 })
             }
         }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
     }
     // MARK: - Update all
     final public func updateAllAsyncOf<M: NSManagedObject>
@@ -571,11 +645,14 @@ extension CoreDataWrapper {
          properties: [AnyHashable: Any],
          predicate: NSPredicate? = nil,
          shouldSave: Bool,
+         isBlocking: Bool = false,
          completion: @escaping (Bool) -> Void,
          completionOnMainThread: Bool) {
         
         let innerContext: NSManagedObjectContext = (context != nil) ? context! : self.mainContext
-        
+        if isBlocking && context == nil {
+            assertionFailure("Please use Sync operation if want blocking operation on main context")
+        }
         //Local function
         func sqliteBlock() -> Bool {
             var sqliteResult = false
@@ -636,7 +713,7 @@ extension CoreDataWrapper {
             }
             return updateResult
         }
-        innerContext.perform {
+        let operationBlock = {
             
             let isUpdated = updateAllBlock()
             
@@ -704,12 +781,19 @@ extension CoreDataWrapper {
                 })
             }
         }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
     }
     // MARK: - Count
     final public func countAsyncOf<M: NSManagedObject>
         (type: M.Type,
          context: NSManagedObjectContext? = nil,
          predicate: NSPredicate?,
+         isBlocking: Bool = false,
          completion: @escaping (Int) -> Void,
          completionOnMainThread: Bool) {
         
@@ -718,8 +802,11 @@ extension CoreDataWrapper {
             innerContext = context
         } else {
             innerContext = self.mainContext
+            if isBlocking {
+                assertionFailure("Please use Sync operation if want blocking operation on main context")
+            }
         }
-        innerContext.perform {
+        let operationBlock = {
             let request = NSFetchRequest<M>.init(entityName: String(describing: type))
             request.predicate = predicate
             let count = (try? innerContext.count(for: request)) ?? -1
@@ -744,6 +831,12 @@ extension CoreDataWrapper {
                 mainCaller()
             }
         }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
     }
     // MARK: - Math Operation
     public final func performOperationAsync<M: NSManagedObject>
@@ -752,6 +845,7 @@ extension CoreDataWrapper {
          context: NSManagedObjectContext? = nil,
          propertyName: String,
          predicate: NSPredicate? = nil,
+         isBlocking: Bool = false,
          completion: @escaping ([[String: AnyObject]]?) -> Void,
          completionOnMainThread: Bool) {
         
@@ -761,6 +855,9 @@ extension CoreDataWrapper {
                 innerContext = context
             } else {
                 innerContext = self.mainContext
+                if isBlocking {
+                    assertionFailure("Please use Sync operation if want blocking operation on main context")
+                }
             }
             let operationBlock = {
                 var properties: [[String: AnyObject]]?
@@ -817,8 +914,11 @@ extension CoreDataWrapper {
                     mainCaller()
                 }
             }
-            innerContext.perform {
-                operationBlock()
+            isBlocking ?
+                innerContext.performAndWait {
+                    operationBlock()
+                }: innerContext.perform {
+                    operationBlock()
             }
         } else {
             completion(nil)

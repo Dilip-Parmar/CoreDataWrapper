@@ -40,6 +40,7 @@
 		EE7E8B1824496B4F00A86153 /* Car+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0F24496B4F00A86153 /* Car+CoreDataClass.swift */; };
 		EE7E8B1A24496F5500A86153 /* AsyncOperationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8AFD2449687200A86153 /* AsyncOperationsTests.swift */; };
 		EE9D819E2449B4FB00DD483A /* CoreDataWrapperTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D819D2449B4FB00DD483A /* CoreDataWrapperTest.swift */; };
+		EEECFC7A2525DA4B00D5D424 /* AsyncOperationBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEECFC792525DA4B00D5D424 /* AsyncOperationBlockingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +71,7 @@
 		EE7E8B0E24496B4F00A86153 /* Car+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Car+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		EE7E8B0F24496B4F00A86153 /* Car+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Car+CoreDataClass.swift"; sourceTree = "<group>"; };
 		EE9D819D2449B4FB00DD483A /* CoreDataWrapperTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataWrapperTest.swift; sourceTree = "<group>"; };
+		EEECFC792525DA4B00D5D424 /* AsyncOperationBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncOperationBlockingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +154,7 @@
 			children = (
 				EE9D819D2449B4FB00DD483A /* CoreDataWrapperTest.swift */,
 				EE7E8AFD2449687200A86153 /* AsyncOperationsTests.swift */,
+				EEECFC792525DA4B00D5D424 /* AsyncOperationBlockingTests.swift */,
 				EE7E8AFE2449687200A86153 /* SyncOperationsTests.swift */,
 				EE7E8AF62449681500A86153 /* Info.plist */,
 			);
@@ -450,6 +453,7 @@
 			files = (
 				EE9D819E2449B4FB00DD483A /* CoreDataWrapperTest.swift in Sources */,
 				EE7E8B0D24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */,
+				EEECFC7A2525DA4B00D5D424 /* AsyncOperationBlockingTests.swift in Sources */,
 				EE7E8B002449687200A86153 /* SyncOperationsTests.swift in Sources */,
 				EE7E8B1A24496F5500A86153 /* AsyncOperationsTests.swift in Sources */,
 			);

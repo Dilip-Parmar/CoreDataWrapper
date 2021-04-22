@@ -25,11 +25,6 @@
 		66F3CFAE22E78C8200A7C7A2 /* CoreDataWrapper+SyncOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667C939122E76C8900451878 /* CoreDataWrapper+SyncOperations.swift */; };
 		EE7E8AF72449681500A86153 /* CoreDataWrapper_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 667C938522E76C3400451878 /* CoreDataWrapper_iOS.framework */; };
 		EE7E8B002449687200A86153 /* SyncOperationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8AFE2449687200A86153 /* SyncOperationsTests.swift */; };
-		EE7E8B0924496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0724496A5300A86153 /* CoreDataWrapper.xcdatamodeld */; };
-		EE7E8B0A24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0724496A5300A86153 /* CoreDataWrapper.xcdatamodeld */; };
-		EE7E8B0B24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0724496A5300A86153 /* CoreDataWrapper.xcdatamodeld */; };
-		EE7E8B0C24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0724496A5300A86153 /* CoreDataWrapper.xcdatamodeld */; };
-		EE7E8B0D24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0724496A5300A86153 /* CoreDataWrapper.xcdatamodeld */; };
 		EE7E8B1024496B4F00A86153 /* Car+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0E24496B4F00A86153 /* Car+CoreDataProperties.swift */; };
 		EE7E8B1124496B4F00A86153 /* Car+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0E24496B4F00A86153 /* Car+CoreDataProperties.swift */; };
 		EE7E8B1224496B4F00A86153 /* Car+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0E24496B4F00A86153 /* Car+CoreDataProperties.swift */; };
@@ -40,6 +35,11 @@
 		EE7E8B1824496B4F00A86153 /* Car+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8B0F24496B4F00A86153 /* Car+CoreDataClass.swift */; };
 		EE7E8B1A24496F5500A86153 /* AsyncOperationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E8AFD2449687200A86153 /* AsyncOperationsTests.swift */; };
 		EE9D819E2449B4FB00DD483A /* CoreDataWrapperTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D819D2449B4FB00DD483A /* CoreDataWrapperTest.swift */; };
+		EEE43C30263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEE43C2E263191D00074C54C /* CoreDataWrapper.xcdatamodeld */; };
+		EEE43C31263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEE43C2E263191D00074C54C /* CoreDataWrapper.xcdatamodeld */; };
+		EEE43C32263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEE43C2E263191D00074C54C /* CoreDataWrapper.xcdatamodeld */; };
+		EEE43C33263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEE43C2E263191D00074C54C /* CoreDataWrapper.xcdatamodeld */; };
+		EEE43C34263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EEE43C2E263191D00074C54C /* CoreDataWrapper.xcdatamodeld */; };
 		EEECFC7A2525DA4B00D5D424 /* AsyncOperationBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEECFC792525DA4B00D5D424 /* AsyncOperationBlockingTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -67,10 +67,10 @@
 		EE7E8AF62449681500A86153 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EE7E8AFD2449687200A86153 /* AsyncOperationsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AsyncOperationsTests.swift; sourceTree = "<group>"; };
 		EE7E8AFE2449687200A86153 /* SyncOperationsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncOperationsTests.swift; sourceTree = "<group>"; };
-		EE7E8B0824496A5300A86153 /* PersonalProtectionTests.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = PersonalProtectionTests.xcdatamodel; sourceTree = "<group>"; };
 		EE7E8B0E24496B4F00A86153 /* Car+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Car+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		EE7E8B0F24496B4F00A86153 /* Car+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Car+CoreDataClass.swift"; sourceTree = "<group>"; };
 		EE9D819D2449B4FB00DD483A /* CoreDataWrapperTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataWrapperTest.swift; sourceTree = "<group>"; };
+		EEE43C2F263191D00074C54C /* PersonalProtectionTests.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = PersonalProtectionTests.xcdatamodel; sourceTree = "<group>"; };
 		EEECFC792525DA4B00D5D424 /* AsyncOperationBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncOperationBlockingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -142,7 +142,7 @@
 				667C939022E76C8900451878 /* CoreDataWrapper.swift */,
 				667C939222E76C8900451878 /* CoreDataWrapper+AsyncOperations.swift */,
 				667C939122E76C8900451878 /* CoreDataWrapper+SyncOperations.swift */,
-				EE7E8B0624496A4100A86153 /* Model */,
+				EEE43C2E263191D00074C54C /* CoreDataWrapper.xcdatamodeld */,
 				EE7E8B0124496A0200A86153 /* Unit Test Dummy files */,
 				667C938922E76C3400451878 /* Info.plist */,
 			);
@@ -168,14 +168,6 @@
 				EE7E8B0E24496B4F00A86153 /* Car+CoreDataProperties.swift */,
 			);
 			path = "Unit Test Dummy files";
-			sourceTree = "<group>";
-		};
-		EE7E8B0624496A4100A86153 /* Model */ = {
-			isa = PBXGroup;
-			children = (
-				EE7E8B0724496A5300A86153 /* CoreDataWrapper.xcdatamodeld */,
-			);
-			path = Model;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -399,11 +391,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE7E8B0924496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */,
 				EE7E8B1024496B4F00A86153 /* Car+CoreDataProperties.swift in Sources */,
 				EE7E8B1524496B4F00A86153 /* Car+CoreDataClass.swift in Sources */,
 				667C939422E76C8900451878 /* CoreDataWrapper.swift in Sources */,
 				667C939622E76C8900451878 /* CoreDataWrapper+AsyncOperations.swift in Sources */,
+				EEE43C30263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */,
 				667C939522E76C8900451878 /* CoreDataWrapper+SyncOperations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -412,11 +404,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE7E8B0A24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */,
 				EE7E8B1124496B4F00A86153 /* Car+CoreDataProperties.swift in Sources */,
 				EE7E8B1624496B4F00A86153 /* Car+CoreDataClass.swift in Sources */,
 				667C93A722E7713200451878 /* CoreDataWrapper+SyncOperations.swift in Sources */,
 				667C93A522E7712D00451878 /* CoreDataWrapper.swift in Sources */,
+				EEE43C31263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */,
 				667C93A622E7712F00451878 /* CoreDataWrapper+AsyncOperations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -425,11 +417,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE7E8B0B24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */,
 				EE7E8B1224496B4F00A86153 /* Car+CoreDataProperties.swift in Sources */,
 				EE7E8B1724496B4F00A86153 /* Car+CoreDataClass.swift in Sources */,
 				667C93C622E7724C00451878 /* CoreDataWrapper+SyncOperations.swift in Sources */,
 				667C93C222E7724700451878 /* CoreDataWrapper.swift in Sources */,
+				EEE43C32263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */,
 				667C93C422E7724900451878 /* CoreDataWrapper+AsyncOperations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -438,11 +430,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EE7E8B0C24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */,
 				EE7E8B1324496B4F00A86153 /* Car+CoreDataProperties.swift in Sources */,
 				EE7E8B1824496B4F00A86153 /* Car+CoreDataClass.swift in Sources */,
 				66F3CFAE22E78C8200A7C7A2 /* CoreDataWrapper+SyncOperations.swift in Sources */,
 				66F3CFAC22E78C7C00A7C7A2 /* CoreDataWrapper.swift in Sources */,
+				EEE43C33263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */,
 				66F3CFAD22E78C7E00A7C7A2 /* CoreDataWrapper+AsyncOperations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -452,7 +444,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EE9D819E2449B4FB00DD483A /* CoreDataWrapperTest.swift in Sources */,
-				EE7E8B0D24496A5300A86153 /* CoreDataWrapper.xcdatamodeld in Sources */,
+				EEE43C34263191D00074C54C /* CoreDataWrapper.xcdatamodeld in Sources */,
 				EEECFC7A2525DA4B00D5D424 /* AsyncOperationBlockingTests.swift in Sources */,
 				EE7E8B002449687200A86153 /* SyncOperationsTests.swift in Sources */,
 				EE7E8B1A24496F5500A86153 /* AsyncOperationsTests.swift in Sources */,
@@ -916,14 +908,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
-		EE7E8B0724496A5300A86153 /* CoreDataWrapper.xcdatamodeld */ = {
+		EEE43C2E263191D00074C54C /* CoreDataWrapper.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
-				EE7E8B0824496A5300A86153 /* PersonalProtectionTests.xcdatamodel */,
+				EEE43C2F263191D00074C54C /* PersonalProtectionTests.xcdatamodel */,
 			);
-			currentVersion = EE7E8B0824496A5300A86153 /* PersonalProtectionTests.xcdatamodel */;
+			currentVersion = EEE43C2F263191D00074C54C /* PersonalProtectionTests.xcdatamodel */;
 			name = CoreDataWrapper.xcdatamodeld;
-			path = ../../Sources/CoreDataWrapper.xcdatamodeld;
+			path = ../Sources/CoreDataWrapper.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};

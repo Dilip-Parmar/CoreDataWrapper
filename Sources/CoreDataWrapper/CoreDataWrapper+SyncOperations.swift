@@ -101,6 +101,35 @@ extension CoreDataWrapper {
         }
         return fetched
     }
+    // MARK: - Fetch one entity
+    final public func fetchOneOf<M: NSManagedObject>
+        (type: M.Type,
+         predicate: NSPredicate? = nil,
+         sortBy: [String: Bool]? = nil) -> M? {
+        var fetched: M?
+        self.mainContext.performAndWait {
+            let sortByBlock = { () -> [NSSortDescriptor] in
+                var sortDescriptors = [NSSortDescriptor]()
+                guard let sortBy = sortBy else {
+                    return sortDescriptors
+                }
+                for (key, sortOrder) in sortBy {
+                    sortDescriptors.append(NSSortDescriptor(key: key, ascending: sortOrder))
+                }
+                return sortDescriptors
+            }
+            guard let entityName = type.entity().name else {
+                return
+            }
+            let request = NSFetchRequest<M>.init(entityName: entityName)
+            request.predicate = predicate
+            request.fetchLimit = 1
+            request.sortDescriptors = sortByBlock()
+            request.returnsObjectsAsFaults = false
+            fetched = try? self.mainContext.fetch(request).first
+        }
+        return fetched
+    }
     // MARK: - Fetch Properties
     final public func fetchPropertiesOf<M: NSManagedObject>
         (type: M.Type,

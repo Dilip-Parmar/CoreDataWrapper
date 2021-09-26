@@ -276,6 +276,80 @@ extension CoreDataWrapper {
                 operationBlock()
         }
     }
+    // MARK: - Fetch one entity
+    final public func fetchOneOf<M: NSManagedObject>
+        (type: M.Type,
+         context: NSManagedObjectContext? = nil,
+         predicate: NSPredicate? = nil,
+         sortBy: [String: Bool]?,
+         isBlocking: Bool = false,
+         completion: @escaping (M?) -> Void,
+         completionOnMainThread: Bool) {
+        
+        var innerContext: NSManagedObjectContext
+        if let context = context {
+            innerContext = context
+        } else {
+            innerContext = self.mainContext
+            if isBlocking {
+                assertionFailure("Please use Sync operation if want blocking operation on main context")
+            }
+        }
+        let sortByBlock = { () -> [NSSortDescriptor] in
+            var sortDescriptors = [NSSortDescriptor]()
+            guard let sortBy = sortBy else {
+                return sortDescriptors
+            }
+            for (key, sortOrder) in sortBy {
+                sortDescriptors.append(NSSortDescriptor(key: key, ascending: sortOrder))
+            }
+            return sortDescriptors
+        }
+        let operationBlock = {
+            let request = NSFetchRequest<M>.init(entityName: String(describing: type))
+            request.predicate = predicate
+            request.sortDescriptors = sortByBlock()
+            request.returnsObjectsAsFaults = false
+            request.fetchLimit = 1
+            let fetched = try? innerContext.fetch(request)
+            
+            let mainCaller = {
+                self.mainContext.perform {
+                    if let fetched = fetched {
+                        var allObjects = [M]()
+                        for fetchedObj in fetched {
+                            if let existing = try? self.mainContext.existingObject(with: fetchedObj.objectID) as? M {
+                                allObjects.append(existing)
+                            }
+                        }
+                        completion(allObjects.first)
+                    } else {
+                        completion(nil)
+                    }
+                }
+            }
+            let bgCaller = {
+                completion(fetched?.first)
+            }
+            let tuple = (completionOnMainThread, (context != nil))
+            switch tuple {
+            case (false, false): //It's main context and no main thread callback
+                bgCaller()
+            case (false, true): //It's bg context and no main thread callback
+                bgCaller()
+            case (true, false): //It's main context and main thread callback
+                bgCaller()
+            case (true, true): //It's bg context and main thread callback
+                mainCaller()
+            }
+        }
+        isBlocking ?
+            innerContext.performAndWait {
+                operationBlock()
+            }: innerContext.perform {
+                operationBlock()
+        }
+    }
     // MARK: - Fetch Properties
     final public func fetchPropertiesAsyncOf<M: NSManagedObject>
         (type: M.Type,
